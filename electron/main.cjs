@@ -1,4 +1,4 @@
-const {app,BrowserWindow,ipcMain,dialog,safeStorage} = require('electron');
+const {app,BrowserWindow,ipcMain,dialog,safeStorage,screen} = require('electron');
 const {Client} = require('ssh2');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -7,6 +7,8 @@ const net = require('node:net');
 const {StringDecoder} = require('node:string_decoder');
 const {validateProfile,rootCommand,fingerprint,isSudoPrompt,createOutputFilter} = require('./security.cjs');
 const {Confirmations}=require('./confirmations.cjs');
+const {exportConnections,importConnections,mergeConnections,validateCommands,visibleBounds}=require('./features.cjs');
+const {registerSftp}=require('./sftp.cjs');
 let win, db, storePath;
 const confirmations=new Confirmations(event=>{if(win&&!win.isDestroyed())win.webContents.send('ssh:event',event);});
 const sessions=new Map();
@@ -21,7 +23,7 @@ function emit(s,type,extra={}){ if(sessions.get(s.id)===s&&win&&!win.isDestroyed
 function clearOutputFilter(s){if(s.outputFilter){const data=s.outputFilter.flush();if(data)emit(s,'data',{data});s.outputFilter=null;}}
 function authorized(e){ if(!win||e.sender!==win.webContents||e.senderFrame!==win.webContents.mainFrame) throw new Error('Forbidden'); }
 function wrap(channel,handler){ ipcMain.handle(channel,async(e,...args)=>{ authorized(e); try {return {ok:true,value:await handler(...args)};}catch(error){return {ok:false,error:error.message};} }); }
-function finish(s){ if(s.closed)return; clearOutputFilter(s); s.closed=true; confirmations.cancelSession(s.id); clearTimeout(s.handshakeTimer); clearInterval(s.timer); clearInterval(s.probeTimer); clearTimeout(s.rootTimer); s.probeSocket?.destroy(); s.password=''; s.client.end(); emit(s,'status',{status:'disconnected'}); sessions.delete(s.id); }
+function finish(s){ if(s.closed)return; clearOutputFilter(s); s.transfer?.abort(); s.closed=true; confirmations.cancelSession(s.id); clearTimeout(s.handshakeTimer); clearInterval(s.timer); clearInterval(s.probeTimer); clearTimeout(s.rootTimer); s.probeSocket?.destroy(); s.password=''; s.client.end(); emit(s,'status',{status:'disconnected'}); sessions.delete(s.id); }
 function armHandshake(s){clearTimeout(s.handshakeTimer);s.handshakeTimer=setTimeout(()=>{emit(s,'status',{status:'error',message:'Сервер не ответил за 20 секунд'});finish(s);},20000);}
 function elevate(s){
   if(!s.channel||s.closed)throw new Error('Сессия не подключена');
@@ -56,10 +58,30 @@ app.whenReady().then(()=>{
   storePath=path.join(app.getPath('userData'),'connections.json');
   db={profiles:[],hosts:{}};
   if(fs.existsSync(storePath)){try {db=JSON.parse(fs.readFileSync(storePath,'utf8'));if(!Array.isArray(db.profiles)||!db.hosts)throw new Error('Invalid database');}catch{dialog.showErrorBox('Amber SSH','Не удалось прочитать connections.json. Файл сохранён без изменений.');app.quit();return;}}
-  win=new BrowserWindow({width:1280,height:820,minWidth:820,minHeight:540,show:!process.env.AMBER_TEST_DATA,backgroundColor:'#121315',frame:false,title:'Amber SSH',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,offscreen:!!process.env.AMBER_TEST_DATA}});
+  const settingsPath=path.join(app.getPath('userData'),'settings.json');let settings={fontSize:14,commands:[]};
+  if(fs.existsSync(settingsPath)){try{const saved=JSON.parse(fs.readFileSync(settingsPath,'utf8'));settings={fontSize:Number.isInteger(saved.fontSize)&&saved.fontSize>=10&&saved.fontSize<=26?saved.fontSize:14,commands:validateCommands(saved.commands||[]),window:saved.window};}catch{dialog.showErrorBox('Amber SSH','Не удалось прочитать settings.json. Файл сохранён без изменений.');app.quit();return;}}
+  function saveSettings(){const temporary=settingsPath+'.tmp';fs.writeFileSync(temporary,JSON.stringify(settings,null,2),{mode:0o600});fs.renameSync(temporary,settingsPath);}
+  win=new BrowserWindow({...visibleBounds(settings.window,screen.getAllDisplays().map(d=>d.workArea)),minWidth:820,minHeight:540,show:!process.env.AMBER_TEST_DATA,backgroundColor:'#121315',frame:false,title:'Amber SSH',webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,backgroundThrottling:false,offscreen:!!process.env.AMBER_TEST_DATA}});
+  if(settings.window?.maximized)win.maximize();
+  let boundsTimer;function saveBounds(){clearTimeout(boundsTimer);boundsTimer=setTimeout(()=>{if(!win.isDestroyed()&&!win.isMinimized()){settings.window={...win.getNormalBounds(),maximized:win.isMaximized()};try{saveSettings();}catch(error){win.webContents.send('ssh:event',{type:'notice',message:'Не удалось сохранить размер окна: '+error.message});}}},300);}
+  win.on('resize',saveBounds);win.on('move',saveBounds);win.on('maximize',saveBounds);win.on('unmaximize',saveBounds);
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.session.setPermissionRequestHandler((_web,_permission,callback)=>callback(false));
   if(process.env.AMBER_DEV_URL)win.loadURL(process.env.AMBER_DEV_URL);else win.loadFile(path.join(__dirname,'../dist/index.html'));
   wrap('profiles:list',()=>db.profiles.map(publicProfile));
+  wrap('settings:get',()=>({fontSize:settings.fontSize,commands:settings.commands}));
+  wrap('settings:font',fontSize=>{if(!Number.isInteger(fontSize)||fontSize<10||fontSize>26)throw new Error('Размер шрифта должен быть от 10 до 26');const old=settings.fontSize;settings.fontSize=fontSize;try{saveSettings();}catch(error){settings.fontSize=old;throw error;}return fontSize;});
+  wrap('commands:save',raw=>{const commands=validateCommands(raw),old=settings.commands;settings.commands=commands;try{saveSettings();}catch(error){settings.commands=old;throw error;}return commands;});
+  wrap('commands:run',async(id,commandId)=>{
+    const s=sessions.get(id),command=settings.commands.find(c=>c.id===commandId);if(!s?.channel||s.closed)throw new Error('Сессия отключена');if(!command)throw new Error('Команда не найдена');
+    const owner=db.profiles.find(p=>p.id===tabOwners.get(id));
+    if(!await confirmations.request({kind:'command',sessionId:id,title:'Выполнить быструю команду?',message:`${command.name} · ${owner?.username||s.username}@${owner?.host||'сервер'}`,preview:command.command,acceptLabel:'Выполнить'}))return {canceled:true};
+    if(sessions.get(id)!==s||s.closed||!s.channel)throw new Error('Сессия изменилась');const input=command.command.replace(/\n/g,'\r')+'\r';s.channel.write(input);s.tx+=Buffer.byteLength(input);return {canceled:false};
+  });
+  wrap('profiles:export',async()=>{const selected=await dialog.showSaveDialog(win,{title:'Экспорт подключений без секретов',defaultPath:'amber-ssh-connections.json',filters:[{name:'JSON',extensions:['json']}]});if(selected.canceled)return {canceled:true};if([storePath,settingsPath].some(file=>path.resolve(file).toLowerCase()===path.resolve(selected.filePath).toLowerCase()))throw new Error('Выберите другой файл: нельзя заменить внутреннюю базу приложения');fs.writeFileSync(selected.filePath,JSON.stringify(exportConnections(db.profiles),null,2));return {canceled:false,count:db.profiles.length};});
+  let pendingImport;
+  wrap('profiles:import-preview',async()=>{pendingImport=null;const selected=await dialog.showOpenDialog(win,{title:'Импорт подключений',properties:['openFile'],filters:[{name:'JSON',extensions:['json']}]});if(selected.canceled)return {canceled:true};const file=selected.filePaths[0];if(fs.statSync(file).size>1048576)throw new Error('Файл импорта слишком большой');const profiles=importConnections(JSON.parse(fs.readFileSync(file,'utf8')));const merged=mergeConnections(db.profiles,profiles);pendingImport={token:crypto.randomUUID(),profiles};return {canceled:false,token:pendingImport.token,added:merged.added,skipped:merged.skipped,names:profiles.slice(0,10).map(p=>p.name)};});
+  wrap('profiles:import-apply',(token,accepted)=>{if(!pendingImport||token!==pendingImport.token)throw new Error('Предпросмотр импорта устарел');const incoming=pendingImport.profiles;pendingImport=null;if(accepted!==true)return {canceled:true};const previous=db.profiles,merged=mergeConnections(previous,incoming);db.profiles=merged.profiles;try{persist();}catch(error){db.profiles=previous;throw error;}return {canceled:false,added:merged.added,skipped:merged.skipped};});
+  registerSftp({wrap,sessions,dialog,getWindow:()=>win,confirmations,emit});
   wrap('dialog:answer',(id,accepted)=>confirmations.answer(id,accepted));
   wrap('profiles:save',(raw,secrets={})=>{
     const p=validateProfile(raw),old=db.profiles.find(x=>x.id===p.id);
@@ -140,6 +162,7 @@ app.whenReady().then(()=>{
     if(!closeApproved&&sessions.size){event.preventDefault();if(closePromptPending)return;closePromptPending=true;
       confirmations.request({kind:'quit',title:'Закрыть приложение?',message:'Все открытые SSH-сессии будут отключены. Сохранённые подключения останутся.',acceptLabel:'Закрыть приложение',cancelLabel:'Остаться'}).then(accepted=>{closePromptPending=false;if(accepted&&!win.isDestroyed()){closeApproved=true;win.close();}});return;}
     confirmations.cancelAll();
+    clearTimeout(boundsTimer);if(!win.isMinimized())settings.window={...win.getNormalBounds(),maximized:win.isMaximized()};try{saveSettings();}catch{}
     for(const s of sessions.values())finish(s);
   });
 });

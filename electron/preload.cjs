@@ -1,6 +1,17 @@
 const {contextBridge, ipcRenderer} = require('electron');
 contextBridge.exposeInMainWorld('amber', {
   profiles:()=>ipcRenderer.invoke('profiles:list'),
+  settings:()=>ipcRenderer.invoke('settings:get'),
+  font:size=>ipcRenderer.invoke('settings:font',size),
+  commandsSave:commands=>ipcRenderer.invoke('commands:save',commands),
+  commandsRun:(id,commandId)=>ipcRenderer.invoke('commands:run',id,commandId),
+  exportProfiles:()=>ipcRenderer.invoke('profiles:export'),
+  importPreview:()=>ipcRenderer.invoke('profiles:import-preview'),
+  importApply:(token,accepted)=>ipcRenderer.invoke('profiles:import-apply',token,accepted),
+  sftpList:(id,path)=>ipcRenderer.invoke('sftp:list',id,path),
+  sftpUpload:(id,path)=>ipcRenderer.invoke('sftp:upload',id,path),
+  sftpDownload:(id,path)=>ipcRenderer.invoke('sftp:download',id,path),
+  sftpCancel:id=>ipcRenderer.invoke('sftp:cancel',id),
   save:(profile,secrets)=>ipcRenderer.invoke('profiles:save',profile,secrets),
   remove:id=>ipcRenderer.invoke('profiles:remove',id),
   key:()=>ipcRenderer.invoke('key:choose'),
