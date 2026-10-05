@@ -7,6 +7,8 @@ work/
 .env
 .env.*
 !.env.example
+settings.json
+settings.json.*
 connections.json
 connections.json.*
 *.pem
