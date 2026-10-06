@@ -17,8 +17,7 @@ const tabOwners=new Map();
 const sessionSecrets=new Map();
 if(process.env.AMBER_TEST_DATA)app.setPath('userData',process.env.AMBER_TEST_DATA);
 function persist(){ const temp=storePath+'.tmp'; fs.writeFileSync(temp,JSON.stringify(db,null,2),{mode:0o600}); fs.renameSync(temp,storePath); }
-function encrypt(value){ if (!safeStorage.isEncryptionAvailable()) throw new Error(t("Хранилище секретов Windows недоступно")); return safeStorage.encryptString(value).toString('base64'); }
-function decrypt(value){ return value ? safeStorage.decryptString(Buffer.from(value,'base64')) : ''; }
+const {encrypt,decrypt}=require('./secret-storage.cjs').createSecretStorage(safeStorage,process.platform,t);
 function publicProfile(p){ const {password,passphrase,...rest}=p; return {...rest,hasPassword:!!password || !!sessionSecrets.get(p.id)?.password,hasPassphrase:!!passphrase || !!sessionSecrets.get(p.id)?.passphrase}; }
 function emit(s,type,extra={}){ if(sessions.get(s.id)===s&&win&&!win.isDestroyed()) win.webContents.send('ssh:event',{id:s.id,type,...extra}); }
 function clearOutputFilter(s){if(s.outputFilter){const data=s.outputFilter.flush();if(data)emit(s,'data',{data});s.outputFilter=null;}}
