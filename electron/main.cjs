@@ -1,4 +1,4 @@
-const {app,BrowserWindow,ipcMain,dialog,safeStorage,screen} = require('electron');
+const {app,BrowserWindow,ipcMain,dialog,safeStorage,screen,clipboard} = require('electron');
 const {Client} = require('ssh2');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -68,6 +68,7 @@ app.whenReady().then(()=>{
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.session.setPermissionRequestHandler((_web,_permission,callback)=>callback(false));
   if(process.env.AMBER_DEV_URL)win.loadURL(process.env.AMBER_DEV_URL);else win.loadFile(path.join(__dirname,'../dist/index.html'));
   wrap('profiles:list',()=>db.profiles.map(publicProfile));
+  wrap('clipboard:write',text=>{if(typeof text!=='string'||Buffer.byteLength(text,'utf8')>8388608)throw new Error('Выделение слишком большое для копирования');clipboard.writeText(text);});
   wrap('settings:get',()=>({fontSize:settings.fontSize,commands:settings.commands}));
   wrap('settings:font',fontSize=>{if(!Number.isInteger(fontSize)||fontSize<10||fontSize>26)throw new Error('Размер шрифта должен быть от 10 до 26');const old=settings.fontSize;settings.fontSize=fontSize;try{saveSettings();}catch(error){settings.fontSize=old;throw error;}return fontSize;});
   wrap('commands:save',raw=>{const commands=validateCommands(raw),old=settings.commands;settings.commands=commands;try{saveSettings();}catch(error){settings.commands=old;throw error;}return commands;});

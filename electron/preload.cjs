@@ -1,6 +1,7 @@
 const {contextBridge, ipcRenderer} = require('electron');
 contextBridge.exposeInMainWorld('amber', {
   profiles:()=>ipcRenderer.invoke('profiles:list'),
+  copy:text=>ipcRenderer.invoke('clipboard:write',text),
   settings:()=>ipcRenderer.invoke('settings:get'),
   font:size=>ipcRenderer.invoke('settings:font',size),
   commandsSave:commands=>ipcRenderer.invoke('commands:save',commands),
