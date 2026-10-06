@@ -230,5 +230,6 @@
   "Неизвестный способ входа": "Unknown authentication method",
   "Выберите приватный ключ": "Choose a private key",
   "Язык интерфейса": "Interface language",
-  "Не удалось сохранить язык": "Could not save language"
+  "Не удалось сохранить язык": "Could not save language",
+  "Защищённое хранилище паролей недоступно. В Linux разблокируйте GNOME Keyring или KWallet. Можно подключиться без сохранения пароля.": "Secure password storage is unavailable. On Linux, unlock GNOME Keyring or KWallet. You can connect without saving the password."
 }
