@@ -1,6 +1,6 @@
 {
   "name": "amber-ssh",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "Minimal personal SSH client",
   "author": "O1SEeez",
@@ -43,7 +43,10 @@
     ],
     "asar": true,
     "win": {
-      "target": "portable",
+      "target": [
+        "portable",
+        "zip"
+      ],
       "signAndEditExecutable": false
     },
     "artifactName": "Amber-SSH-${version}-${arch}.${ext}",
