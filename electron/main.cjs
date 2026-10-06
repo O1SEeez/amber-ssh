@@ -107,6 +107,8 @@ app.whenReady().then(()=>{
     const privateKey=p.auth==='key'?fs.readFileSync(p.keyPath):undefined;
     const s={id:resumeId||crypto.randomUUID(),client:new Client(),password,username:p.username,decoder:new StringDecoder('utf8'),rx:0,tx:0,prevRx:0,prevTx:0,closed:false,latency:null};sessions.set(s.id,s);tabOwners.set(s.id,profileId);
     emit(s,'status',{status:'connecting'});
+    // Interactive keystrokes must not wait for TCP's small-packet batching.
+    s.client.on('connect',()=>s.client.setNoDelay(true));
     s.client.on('ready',()=>{
       if(s.closed||sessions.get(s.id)!==s)return;
       clearTimeout(s.handshakeTimer);
