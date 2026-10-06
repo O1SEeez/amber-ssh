@@ -9,6 +9,7 @@ import './style.css';
 import {useConfirmation,type ConfirmationOptions} from './Confirmation';
 import {Commands,ServerPalette,SftpPane,type QuickCommand} from './Features';
 import {enableSelectionEdgeScroll} from './terminalSelection';
+import {pasteNeedsConfirmation} from './paste';
 type Profile={id:string;name:string;host:string;port:number;username:string;auth:'password'|'key';keyPath:string;remember:boolean;autoRoot:boolean;hasPassword?:boolean;hasPassphrase?:boolean};
 type Result<T=unknown>={ok:boolean;value:T;error?:string};
 type SSHEvent={id:string;type:string;data?:string;status?:string;message?:string;rx?:number;tx?:number;rxRate?:number;txRate?:number;latency?:number|null;requestId?:string;profileId?:string;profile?:Profile}&Partial<ConfirmationOptions>;
@@ -37,7 +38,7 @@ function TerminalPane({tab,active,onFind,onConfirm,onFontChange,onNotice}:{tab:T
       if(pastePending)return;pastePending=true;
       try{
         if(text.length>20000){await onConfirm({kind:'paste',title:'Слишком большой текст',message:'Для вставки команд поддерживается до 20 000 символов. Передайте большой файл через SFTP.',acceptLabel:'Понятно'});return;}
-        if(/[\r\n]/.test(text)&&!await onConfirm({kind:'paste',title:'Вставить несколько строк?',message:'Этот текст будет отправлен в активную сессию. Переводы строк могут выполнить команды на сервере.',preview:text,acceptLabel:'Вставить'}))return;
+        if(pasteNeedsConfirmation(text)&&!await onConfirm({kind:'paste',title:'Вставить несколько строк?',message:'Этот текст будет отправлен в активную сессию. Переводы строк могут выполнить команды на сервере.',preview:text,acceptLabel:'Вставить'}))return;
         term.paste(text);
       }finally{pastePending=false;}
     }
