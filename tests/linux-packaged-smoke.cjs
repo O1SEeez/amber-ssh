@@ -31,6 +31,6 @@ async function main(){
     const remembered=await evaluate('amber.profiles()');assert.equal(remembered.value[0].hasPassword,true);
     assert.equal(JSON.parse(fs.readFileSync(path.join(profile,'settings.json'),'utf8')).language,'en');
     console.log('PASS: packaged Linux ELF, renderer, secure IPC, clipboard, saved language, GNOME Keyring encryption and profile persistence');
-  }finally{socket?.close();child.kill();fs.rmSync(profile,{recursive:true,force:true});}
+  }finally{socket?.close();if(child.exitCode===null&&child.signalCode===null)await new Promise(resolve=>{child.once('exit',resolve);child.kill();setTimeout(()=>{child.kill('SIGKILL');resolve();},3000).unref();});fs.rmSync(profile,{recursive:true,force:true,maxRetries:10,retryDelay:200});}
 }
 if(process.platform==='linux')main().catch(error=>{console.error(error);process.exitCode=1;});
