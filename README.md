@@ -101,9 +101,9 @@ Smart App Control. Бесплатная подпись SignPath ещё не по
 
 Это отдельная Linux-сборка Electron; Wine и эмуляция не используются.
 
-- Debian / Ubuntu / Mint: скачайте `.deb` и установите `sudo apt install ./Amber-SSH-0.2.5-linux-x64.deb`. Приложение появится в меню.
+- Debian / Ubuntu / Mint: скачайте `.deb` и установите `sudo apt install ./Amber-SSH-0.2.5-linux-amd64.deb`. Приложение появится в меню.
 - Arch Linux и другие дистрибутивы: скачайте `.tar.gz`, распакуйте всю папку и запустите `./amber-ssh` из неё. Нужны системные библиотеки Electron (GTK, NSS, ALSA и остальные зависимости рабочего стола). `.deb` на Arch не устанавливается.
-- AppImage: `chmod +x Amber-SSH-0.2.5-linux-x64.AppImage`, затем запустите файл. Если FUSE недоступен, используйте архив или `./Amber-SSH-0.2.5-linux-x64.AppImage --appimage-extract-and-run`.
+- AppImage: `chmod +x Amber-SSH-0.2.5-linux-x86_64.AppImage`, затем запустите файл. Если FUSE недоступен, используйте архив или `./Amber-SSH-0.2.5-linux-x86_64.AppImage --appimage-extract-and-run`.
 
 Для сохранения паролей должно быть доступно разблокированное системное хранилище GNOME Keyring либо KWallet. В минимальном Arch оно может потребовать отдельной настройки. Данные находятся в `${XDG_CONFIG_HOME:-~/.config}/amber-ssh/`; шифрованные пароли нельзя переносить между Windows и Linux. Экспорт подключений без секретов работает между платформами.
 
