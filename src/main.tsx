@@ -13,7 +13,7 @@ type Profile={id:string;name:string;host:string;port:number;username:string;auth
 type Result<T=unknown>={ok:boolean;value:T;error?:string};
 type SSHEvent={id:string;type:string;data?:string;status?:string;message?:string;rx?:number;tx?:number;rxRate?:number;txRate?:number;latency?:number|null;requestId?:string;profileId?:string;profile?:Profile}&Partial<ConfirmationOptions>;
 type Tab={id:string;profile:Profile;status:string;error?:string;rx:number;tx:number;rxRate:number;txRate:number;latency:number|null};
-declare global {interface Window{amber?:{profiles:()=>Promise<Result<Profile[]>>;copy:(text:string)=>Promise<Result>;save:(p:Profile,s:{password:string;passphrase:string})=>Promise<Result<Profile>>;remove:(id:string)=>Promise<Result>;key:()=>Promise<Result<string>>;connect:(id:string,s:object,size:object,resumeId?:string)=>Promise<Result<{id:string}>>;disconnect:(id:string,forget?:boolean)=>Promise<Result>;root:(id:string)=>Promise<Result>;answer:(id:string,accepted:boolean)=>Promise<Result>;input:(id:string,data:string)=>void;resize:(id:string,cols:number,rows:number)=>void;window:(action:string)=>void;settings:()=>Promise<Result<{fontSize:number;commands:QuickCommand[]}>>;font:(size:number)=>Promise<Result<number>>;commandsSave:(commands:QuickCommand[])=>Promise<Result<QuickCommand[]>>;commandsRun:(id:string,commandId:string)=>Promise<Result>;exportProfiles:()=>Promise<Result<{canceled:boolean;count:number}>>;importPreview:()=>Promise<Result<{canceled:boolean;token:string;added:number;skipped:number;names:string[]}>>;importApply:(token:string,accepted:boolean)=>Promise<Result<{canceled:boolean;added:number;skipped:number}>>;sftpList:(id:string,path:string)=>Promise<Result<{path:string;entries:{name:string;directory:boolean;link:boolean;size:number;modified:number}[]}>>;sftpUpload:(id:string,path:string)=>Promise<Result<{canceled:boolean}>>;sftpDownload:(id:string,path:string)=>Promise<Result<{canceled:boolean}>>;sftpCancel:(id:string)=>Promise<Result>;onEvent:(cb:(e:SSHEvent)=>void)=>()=>void}}}
+declare global {interface Window{amber?:{profiles:()=>Promise<Result<Profile[]>>;copy:(text:string)=>Promise<Result>;clipboardText:()=>Promise<Result<string>>;save:(p:Profile,s:{password:string;passphrase:string})=>Promise<Result<Profile>>;remove:(id:string)=>Promise<Result>;key:()=>Promise<Result<string>>;connect:(id:string,s:object,size:object,resumeId?:string)=>Promise<Result<{id:string}>>;disconnect:(id:string,forget?:boolean)=>Promise<Result>;root:(id:string)=>Promise<Result>;answer:(id:string,accepted:boolean)=>Promise<Result>;input:(id:string,data:string)=>void;resize:(id:string,cols:number,rows:number)=>void;window:(action:string)=>void;settings:()=>Promise<Result<{fontSize:number;commands:QuickCommand[]}>>;font:(size:number)=>Promise<Result<number>>;commandsSave:(commands:QuickCommand[])=>Promise<Result<QuickCommand[]>>;commandsRun:(id:string,commandId:string)=>Promise<Result>;exportProfiles:()=>Promise<Result<{canceled:boolean;count:number}>>;importPreview:()=>Promise<Result<{canceled:boolean;token:string;added:number;skipped:number;names:string[]}>>;importApply:(token:string,accepted:boolean)=>Promise<Result<{canceled:boolean;added:number;skipped:number}>>;sftpList:(id:string,path:string)=>Promise<Result<{path:string;entries:{name:string;directory:boolean;link:boolean;size:number;modified:number}[]}>>;sftpUpload:(id:string,path:string)=>Promise<Result<{canceled:boolean}>>;sftpDownload:(id:string,path:string)=>Promise<Result<{canceled:boolean}>>;sftpCancel:(id:string)=>Promise<Result>;onEvent:(cb:(e:SSHEvent)=>void)=>()=>void}}}
 const api=window.amber;
 let preferredFontSize=14;
 function applyFont(size:number){preferredFontSize=size;for(const [id,t] of terminals){t.terminal.options.fontSize=size;t.fit.fit();api?.resize(id,t.terminal.cols,t.terminal.rows);}}
@@ -43,18 +43,39 @@ function TerminalPane({tab,active,onFind,onConfirm,onFontChange,onNotice}:{tab:T
     }
     const nativePaste=(event:ClipboardEvent)=>{const value=event.clipboardData?.getData('text/plain');if(value!==undefined){event.preventDefault();event.stopImmediatePropagation();void paste(value);}};
     ref.current!.addEventListener('paste',nativePaste,true);
+    async function pasteClipboard(){
+      try{
+        const result=api?await api.clipboardText():{ok:true,value:await navigator.clipboard.readText()};
+        if(!result.ok)throw new Error(result.error||'Не удалось прочитать буфер обмена');
+        await paste(result.value);
+      }catch(error){onNotice(error instanceof Error?error.message:'Не удалось вставить текст');}
+    }
+    const shortcut=(event:KeyboardEvent)=>{
+      const container=ref.current;
+      if(!container?.offsetWidth||!event.ctrlKey||event.altKey||event.metaKey||document.querySelector('[aria-modal="true"]'))return;
+      const target=event.target instanceof Element?event.target:null;
+      if(target?.closest('input,textarea,select,[contenteditable="true"]')&&!container.contains(target))return;
+      const code=event.code||('Key'+event.key.toUpperCase());
+      if(code!=='KeyC'&&code!=='KeyV')return;
+      event.preventDefault();event.stopImmediatePropagation();
+      if(code==='KeyV'){void pasteClipboard();return;}
+      if(term.hasSelection()){void copy();return;}
+      if(!event.shiftKey)api?.input(tab.id,'\x03');
+    };
+    const contextPaste=(event:MouseEvent)=>{
+      if(document.querySelector('[aria-modal="true"]'))return;
+      event.preventDefault();event.stopImmediatePropagation();term.focus();void pasteClipboard();
+    };
+    window.addEventListener('keydown',shortcut,true);
+    ref.current!.addEventListener('contextmenu',contextPaste,true);
     term.attachCustomKeyEventHandler(event=>{
       if(event.type!=='keydown')return true;
-      if(event.ctrlKey&&(event.key==='f'||event.key==='F')){onFind();return false;}
-      if(event.ctrlKey&&!event.altKey&&event.key.toLowerCase()==='c'&&(event.shiftKey||term.hasSelection())){event.preventDefault();if(term.hasSelection())void copy();return false;}
-      if(event.ctrlKey&&event.shiftKey&&(event.key==='V'||event.key==='v')){navigator.clipboard.readText().then(async text=>{
-        await paste(text);
-      }).catch(()=>{});return false;}
+      if(event.ctrlKey&&!event.altKey&&event.code==='KeyF'){event.preventDefault();onFind();return false;}
       if(event.ctrlKey&&['+','=','-','0'].includes(event.key)){onFontChange(event.key==='0'?14:Math.max(10,Math.min(26,preferredFontSize+(event.key==='-'?-1:1))));return false;}
       return true;
     });
     const observer=new ResizeObserver(()=>{if(ref.current?.offsetWidth){fit.fit();api?.resize(tab.id,term.cols,term.rows);}});observer.observe(ref.current!);
-    return()=>{stopSelectionScroll();ref.current?.removeEventListener('paste',nativePaste,true);observer.disconnect();input.dispose();term.dispose();terminals.delete(tab.id);buffers.delete(tab.id);};
+    return()=>{stopSelectionScroll();window.removeEventListener('keydown',shortcut,true);ref.current?.removeEventListener('contextmenu',contextPaste,true);ref.current?.removeEventListener('paste',nativePaste,true);observer.disconnect();input.dispose();term.dispose();terminals.delete(tab.id);buffers.delete(tab.id);};
   },[tab.id]);
   useEffect(()=>{if(active){requestAnimationFrame(()=>{const t=terminals.get(tab.id);t?.fit.fit();t?.terminal.focus();if(t)api?.resize(tab.id,t.terminal.cols,t.terminal.rows);});}},[active,tab.id]);
   return <div className={`terminal-pane ${active?'visible':''}`} ref={ref}/>;
@@ -87,7 +108,7 @@ function App(){
     else if(e.type==='notice')setNotice(e.message||'');
   });},[]);
   useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNotice(''),7000);return()=>clearTimeout(t);},[notice]);
-  useEffect(()=>{const close=()=>{setContext(null);setMenu(false);setToolsOpen(false);};window.addEventListener('click',close);const key=(e:KeyboardEvent)=>{if(e.ctrlKey&&e.key.toLowerCase()==='k'&&!document.querySelector('[aria-modal="true"]')){e.preventDefault();e.stopPropagation();setPaletteOpen(true);return;}if(e.key==='Escape'){setPaletteOpen(false);setCommandsOpen(false);setToolsOpen(false);setEditing(null);setLogin(null);setContext(null);setMenu(false);setFind(false);}if(e.ctrlKey&&e.key==='Tab'&&tabsRef.current.length){e.preventDefault();setActive(prev=>{const ts=tabsRef.current;return ts[(ts.findIndex(t=>t.id===prev)+1)%ts.length].id;});}};window.addEventListener('keydown',key,true);return()=>{window.removeEventListener('click',close);window.removeEventListener('keydown',key,true);};},[]);
+  useEffect(()=>{const close=()=>{setContext(null);setMenu(false);setToolsOpen(false);};window.addEventListener('click',close);const key=(e:KeyboardEvent)=>{if(e.ctrlKey&&!e.altKey&&e.code==='KeyK'&&!document.querySelector('[aria-modal="true"]')){e.preventDefault();e.stopPropagation();setPaletteOpen(true);return;}if(e.key==='Escape'){setPaletteOpen(false);setCommandsOpen(false);setToolsOpen(false);setEditing(null);setLogin(null);setContext(null);setMenu(false);setFind(false);}if(e.ctrlKey&&e.key==='Tab'&&tabsRef.current.length){e.preventDefault();setActive(prev=>{const ts=tabsRef.current;return ts[(ts.findIndex(t=>t.id===prev)+1)%ts.length].id;});}};window.addEventListener('keydown',key,true);return()=>{window.removeEventListener('click',close);window.removeEventListener('keydown',key,true);};},[]);
   function edit(p:Profile){setEditing({...p});setPassword('');setPassphrase('');setShowPassword(false);setAdvanced(false);setFormError('');setContext(null);}
   async function save(e:React.FormEvent){e.preventDefault();if(!api||!editing)return;setSaving(true);const r=await api.save(editing,{password,passphrase});setSaving(false);if(!r.ok){setFormError(r.error||'Ошибка сохранения');return;}setEditing(null);setPassword('');setPassphrase('');await reload();}
   async function connect(p:Profile,secrets:object={},existingId?:string){
@@ -114,7 +135,7 @@ function App(){
   async function exportProfiles(){setToolsOpen(false);const r=await api?.exportProfiles();if(r?.ok&&!r.value.canceled)setNotice('Подключения экспортированы без паролей и ключей.');else if(r&&!r.ok)setNotice(r.error||'Ошибка экспорта');}
   async function importProfiles(){setToolsOpen(false);const preview=await api?.importPreview();if(!preview?.ok){if(preview)setNotice(preview.error||'Ошибка импорта');return;}if(preview.value.canceled)return;const p=preview.value;const accepted=await confirm({kind:'import',title:'Импортировать подключения?',message:'Будет добавлено: '+p.added+'. Дубликатов пропущено: '+p.skipped+'. Пароли и ключи потребуется указать заново. Переход в root выключен.',acceptLabel:'Импортировать'});const r=await api?.importApply(p.token,accepted);if(r?.ok&&!r.value.canceled){await reload();setNotice('Добавлено подключений: '+r.value.added);}else if(r&&!r.ok)setNotice(r.error||'Ошибка импорта');}
   return <div className="app">
-    <header className="titlebar"><div className="brand"><TerminalIcon size={18}/><span>Amber SSH</span><span className="version">0.2.1</span></div><div className="window-buttons"><button aria-label="Свернуть" onClick={()=>api?.window('minimize')}><Minus size={15}/></button><button aria-label="Развернуть" onClick={()=>api?.window('maximize')}><Square size={12}/></button><button className="window-close" aria-label="Закрыть приложение" onClick={()=>api?.window('close')}><X size={17}/></button></div></header>
+    <header className="titlebar"><div className="brand"><TerminalIcon size={18}/><span>Amber SSH</span><span className="version">0.2.2</span></div><div className="window-buttons"><button aria-label="Свернуть" onClick={()=>api?.window('minimize')}><Minus size={15}/></button><button aria-label="Развернуть" onClick={()=>api?.window('maximize')}><Square size={12}/></button><button className="window-close" aria-label="Закрыть приложение" onClick={()=>api?.window('close')}><X size={17}/></button></div></header>
     <div className="workspace"><aside className="sidebar"><div className="sidebar-heading">Подключения <span>{profiles.length||''}</span><button className="icon-button" title="Поиск и управление подключениями" aria-label="Управление подключениями" onClick={e=>{e.stopPropagation();setToolsOpen(!toolsOpen);}}><MoreVertical size={16}/></button>{toolsOpen&&<div className="dropdown sidebar-tools" onClick={e=>e.stopPropagation()}><button onClick={()=>{setPaletteOpen(true);setToolsOpen(false);}}><Search size={15}/>Найти сервер · Ctrl+K</button><button onClick={()=>{setCommandsOpen(true);setToolsOpen(false);}}><TerminalIcon size={15}/>Быстрые команды</button><button onClick={exportProfiles}><ArrowUp size={15}/>Экспорт подключений</button><button onClick={importProfiles}><ArrowDown size={15}/>Импорт подключений</button></div>}</div>
       {profiles.length>5&&<div className="filter"><Search size={14}/><input placeholder="Найти сервер" value={filter} onChange={e=>setFilter(e.target.value)}/></div>}
       <div className="server-list">{profiles.filter(p=>(p.name+' '+p.host).toLowerCase().includes(filter.toLowerCase())).map(p=><button key={p.id} className={`server-row ${current?.profile.id===p.id?'selected':''}`} onClick={()=>connect(p)} onContextMenu={e=>{e.preventDefault();setContext({p,x:Math.min(e.clientX,window.innerWidth-220),y:Math.min(e.clientY,window.innerHeight-170)});}}><Server size={18}/><span><strong>{p.name}</strong><small>{p.username}@{p.host}</small></span>{tabs.some(t=>t.profile.id===p.id&&t.status==='connected')&&<i className="live-dot"/>}</button>)}
