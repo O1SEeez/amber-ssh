@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('amber', {
   copy:text=>ipcRenderer.invoke('clipboard:write',text),
   clipboardText:()=>ipcRenderer.invoke('clipboard:read'),
   settings:()=>ipcRenderer.invoke('settings:get'),
+  language:value=>ipcRenderer.invoke('settings:language',value),
   font:size=>ipcRenderer.invoke('settings:font',size),
   commandsSave:commands=>ipcRenderer.invoke('commands:save',commands),
   commandsRun:(id,commandId)=>ipcRenderer.invoke('commands:run',id,commandId),
