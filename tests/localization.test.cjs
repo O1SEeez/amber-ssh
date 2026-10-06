@@ -12,7 +12,7 @@ test('localization preserves interpolated user text and falls back for server me
 });
 test('every app translation key has English text with matching placeholders',()=>{
   const ts=require('typescript');
-  for(const file of ['src/main.tsx','src/Features.tsx','src/Confirmation.tsx','electron/main.cjs','electron/sftp.cjs','electron/features.cjs','electron/security.cjs']){
+  for(const file of ['src/main.tsx','src/Features.tsx','src/Confirmation.tsx','electron/main.cjs','electron/sftp.cjs','electron/features.cjs','electron/security.cjs','electron/secret-storage.cjs']){
     const source=ts.createSourceFile(file,fs.readFileSync(path.join(__dirname,'..',file),'utf8'),ts.ScriptTarget.Latest,true,file.endsWith('tsx')?ts.ScriptKind.TSX:ts.ScriptKind.JS);
     function walk(node){
       if(ts.isStringLiteral(node)&&/[А-Яа-яЁё]/.test(node.text)){
