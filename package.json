@@ -1,6 +1,6 @@
 {
   "name": "amber-ssh",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "description": "Minimal personal SSH client",
   "author": "O1SEeez",
@@ -10,7 +10,8 @@
     "build": "tsc --noEmit && vite build",
     "start": "electron .",
     "dist": "pnpm build && electron-builder --win portable --x64",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "dist:linux": "pnpm build && electron-builder --linux AppImage deb tar.gz --x64"
   },
   "dependencies": {
     "@xterm/xterm": "^5.5.0",
@@ -53,7 +54,24 @@
       "signExecutable": false
     },
     "artifactName": "Amber-SSH-${version}-${arch}.${ext}",
-    "npmRebuild": false
+    "npmRebuild": false,
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "tar.gz"
+      ],
+      "icon": "assets/icon.png",
+      "category": "System",
+      "artifactName": "Amber-SSH-${version}-linux-${arch}.${ext}",
+      "maintainer": "O1SEeez",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "amber-ssh",
+          "Comment": "Minimal SSH terminal and SFTP client"
+        }
+      }
+    }
   },
   "license": "MIT",
   "packageManager": "pnpm@11.19.0",
