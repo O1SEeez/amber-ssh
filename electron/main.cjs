@@ -69,6 +69,7 @@ app.whenReady().then(()=>{
   if(process.env.AMBER_DEV_URL)win.loadURL(process.env.AMBER_DEV_URL);else win.loadFile(path.join(__dirname,'../dist/index.html'));
   wrap('profiles:list',()=>db.profiles.map(publicProfile));
   wrap('clipboard:write',text=>{if(typeof text!=='string'||Buffer.byteLength(text,'utf8')>8388608)throw new Error('Выделение слишком большое для копирования');clipboard.writeText(text);});
+  wrap('clipboard:read',()=>{const text=clipboard.readText();if(text.length>20000)throw new Error('Для вставки поддерживается до 20 000 символов. Передайте большой файл через SFTP.');return text;});
   wrap('settings:get',()=>({fontSize:settings.fontSize,commands:settings.commands}));
   wrap('settings:font',fontSize=>{if(!Number.isInteger(fontSize)||fontSize<10||fontSize>26)throw new Error('Размер шрифта должен быть от 10 до 26');const old=settings.fontSize;settings.fontSize=fontSize;try{saveSettings();}catch(error){settings.fontSize=old;throw error;}return fontSize;});
   wrap('commands:save',raw=>{const commands=validateCommands(raw),old=settings.commands;settings.commands=commands;try{saveSettings();}catch(error){settings.commands=old;throw error;}return commands;});
