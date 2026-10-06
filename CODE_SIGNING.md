@@ -4,10 +4,10 @@ Current builds are unsigned. Publishing source code or a SHA256 checksum does
 not give a binary a trusted Windows signature. Smart App Control can block
 these builds. This project does not disable or modify Windows protection.
 
-Free signing through SignPath Foundation is being considered. The project has
-not yet been accepted and does not currently receive signing from SignPath.
-Eligibility and approval are determined by the Foundation:
-https://signpath.org/terms.html
+The project currently has no code signing provider. Free OSS signing may be
+reconsidered in the future; no certificate or approval is promised. SignPath
+Foundation eligibility is determined by the Foundation:
+https://signpath.org/terms
 
 ## Intended process
 
@@ -28,6 +28,7 @@ SSH session when the user requests elevation. The application also opens TCP
 connections to the selected SSH port to measure connection setup time.
 
 There are no built-in telemetry, analytics or update-check services. Saved
-secrets are encrypted locally through Electron safeStorage / Windows DPAPI.
+secrets are encrypted locally through Electron safeStorage: Windows DPAPI or a
+supported Linux system keyring. Insecure Linux plaintext backends are rejected.
 Private key files remain at the locations selected by the user. Connection
 data is not part of this source repository.

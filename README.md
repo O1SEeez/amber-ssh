@@ -1,112 +1,98 @@
-# Amber SSH — 0.2.5
+<p align="center">
+  <img src="assets/icon.png" width="88" alt="Amber SSH logo">
+</p>
+<h1 align="center">Amber SSH</h1>
+<p align="center">Your terminal. Just the essentials.</p>
+<p align="center"><a href="README.ru.md">Русский</a> · <a href="https://github.com/O1SEeez/amber-ssh/releases">Downloads</a> · <a href="https://github.com/O1SEeez/amber-ssh/issues">Feedback</a> · <a href="CONTRIBUTING.md">Contributing</a></p>
 
-Персональный SSH-клиент для Windows 10/11 и Linux x64. Спокойный графитовый интерфейс с оранжевыми акцентами.
+A minimal SSH desktop client for Windows and Linux, with a calm dark interface and orange accents. Built for people who want to connect, work and get on with their day.
 
-## Язык и иконка
+![Amber SSH terminal with a local demo connection](assets/screenshot-terminal.png)
 
-Интерфейс доступен на русском и английском. Откройте меню `⋮` рядом с «Подключения» → «Язык интерфейса» → English / Русский. Выбор сохраняется в `settings.json`; переключение не закрывает SSH-сессии. Имена серверов, сохранённые команды, имена файлов и вывод удалённого терминала не переводятся. Переведены подписи, подсказки, диалоги доверия и подтверждения, SFTP, встроенные сообщения об ошибках и заголовки диалогов выбора файлов. Системные сообщения сервера/Windows остаются в исходном виде.
+## Download
 
-Собственная иконка встроена в EXE, окно приложения и стартовый экран. Исходный логотип — `assets/logo.png`, Windows ICO с размерами 16–256 px — `assets/icon.ico`.
+| Platform | Build | Version |
+| --- | --- | --- |
+| Windows 10/11 x64 | [ZIP — recommended](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.4/Amber-SSH-0.2.4-x64.zip) · [Single EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.4/Amber-SSH-0.2.4-x64.exe) | 0.2.4 |
+| Debian / Ubuntu / Mint x64 | [DEB installer](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-amd64.deb) | 0.2.5 |
+| Linux x64, including Arch | [AppImage](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x86_64.AppImage) · [tar.gz](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x64.tar.gz) | 0.2.5 |
 
-## Использование
+macOS is planned; no Mac build is available yet. These are the latest available builds for each platform.
 
-Для быстрого запуска скачайте `Amber-SSH-0.2.4-x64.zip`, распакуйте всю папку и запускайте `Amber SSH.exe` из неё. Установка не требуется; EXE нужно оставлять рядом с остальными файлами. Однофайловый `Amber-SSH-0.2.4-x64.exe` тоже доступен, но при каждом запуске распаковывает приложение во временную папку и может открываться заметно дольше. Нажмите «Добавить сервер», укажите адрес, имя пользователя и пароль или приватный ключ OpenSSH / PEM. Нестандартный порт находится в «Дополнительно». Диалоги доверия серверу, изменения ключа, закрытия сессии, выхода из приложения, удаления подключения и вставки нескольких строк оформлены в общей теме. Escape и нажатие вне диалога отменяют действие; Enter изначально выбирает безопасную кнопку отмены. Доверие не сохраняется до явного подтверждения. Неотвеченный запрос доверия отменяется через две минуты.
+**Windows:** extract the entire ZIP and run `Amber SSH.exe` inside it. Keep the other files alongside the EXE. The single-file EXE extracts itself on every launch and can start more slowly.
 
-После обрыва или отключения нажмите «Подключиться снова» внизу терминала либо в меню сессии. Переподключение происходит в той же вкладке, терминальный буфер и его поиск сохраняются; между попытками появляется отметка времени. Удалённые процессы не восстанавливаются, и сам сервер может очистить экран командами управления терминалом. Повторный вход использует последние сохранённые настройки сервера.
+**Debian / Ubuntu / Mint:** install the downloaded package with:
 
-Если сервер отклоняет вход по паролю, приложение открывает окно «Обновить пароль». Можно повторить вход с новым паролем в той же вкладке. Переключатель «Сохранить после успешного входа» заменяет сохранённый пароль только после успешной SSH-аутентификации. При неудачной попытке и при отмене старый пароль остаётся. Если переключатель выключен, новый пароль действует только в текущей сессии, включая её sudo. Это окно относится к SSH-входу по паролю, а не к ошибкам SSH-ключа или к отказу sudo внутри уже открытой сессии.
-
-«Запомнить пароль» сохраняет секреты через Electron safeStorage: Windows DPAPI или системное хранилище Linux (GNOME Keyring / KWallet). На Linux небезопасный fallback `basic_text` запрещён; без доступного хранилища выключите сохранение пароля. Данные находятся в `%APPDATA%/amber-ssh/connections.json` и привязаны к вашей учётной записи Windows. Если переключатель выключен, пароль сохраняется только в памяти приложения до его закрытия. Не переносите файл настроек с секретами на другой компьютер в расчёте, что они расшифруются.
-
-«Сразу переходить в root» запускает `sudo -i` после подключения и отправляет сохранённый пароль пользователя при ожидаемом запросе sudo. Пользователь должен иметь соответствующие права на сервере. При входе по ключу можно отдельно сохранить пароль пользователя для sudo. Приложение не изменяет sudoers и не отключает пароль на сервере. В меню `⋮` открытой сессии также есть действие «Перейти в root». Автоввод поддерживает стандартный sudo, включая персональный маркер запроса пароля; MFA, нестандартные PAM-сценарии и произвольные команды sudo, введённые вручную, не автоматизируются. При повторном запросе пароль второй раз не отправляется автоматически.
-
-При первом подключении приложение показывает fingerprint сервера. Сверьте его с доверенным источником и подтвердите. Изменение ключа требует отдельного подтверждения.
-
-Нажмите правой кнопкой по серверу для редактирования, дублирования или удаления. Клик по серверу открывает новую независимую сессию. Дублирование настроек не копирует пароль. Поиск серверов появляется при наличии более пяти подключений.
-
-Выделение мышью автоматически прокручивает терминал, когда курсор находится у верхнего или нижнего края области текста. Прокрутка останавливается при возвращении курсора в середину или отпускании кнопки мыши. В приложениях с обработкой мыши (например, tmux или vim) для обычного выделения удерживайте Shift.
-
-## Новое в 0.2.0
-
-Меню `⋮` рядом с заголовком «Подключения» открывает поиск, быстрые команды, импорт и экспорт. `Ctrl+K` вызывает поиск по имени, адресу и пользователю; стрелки выбирают сервер, Enter подключает.
-
-Быстрые команды можно добавлять, редактировать и удалять. Перед отправкой показываются полный текст и целевой сервер; действие требует подтверждения. Команды хранятся открытым текстом в `%APPDATA%/amber-ssh/settings.json` — не сохраняйте в них пароли или токены. Здесь же сохраняются размер шрифта, положение и размер окна. Эти настройки не входят в экспорт подключений.
-
-Вставка четырёх и более строк показывает полный текст перед отправкой в терминал, в том числе при обычной вставке из буфера. До трёх строк включительно вставляются сразу. Считаются явные переводы строк (LF, CRLF и CR), а не перенос по ширине окна; завершающий перевод строки не добавляет ещё одну строку. Вставка свыше 20 000 символов блокируется; для больших файлов используйте SFTP.
-
-Экспорт JSON содержит имя, адрес, порт, пользователя и метод входа. В нём нет паролей, секретной фразы ключа, путей к ключам или доверенных fingerprint. Адреса и имена пользователей остаются в экспорте: учитывайте это перед передачей файла. Импорт добавляет новые подключения после подтверждения, пропускает совпадения по адресу, порту, пользователю и методу входа и сохраняет существующие настройки. После импорта укажите пароль или заново выберите ключ. Доверие серверу подтверждается отдельно; автоматический переход в root отключён для импортированных подключений.
-
-### Файлы SFTP
-
-Откройте «Файлы SFTP» в меню `⋮` активной сессии. Панель справа позволяет переходить по папкам двойным кликом, вводить путь, обновлять список, загружать и скачивать отдельные файлы. Отображаются прогресс и кнопка отмены. Перед заменой существующего файла приложение просит подтверждение. Скачивание сначала записывается во временный файл: при отмене или ошибке прежний локальный файл сохраняется. При замене файла на сервере запись идёт напрямую: обрыв загрузки может оставить его неполным.
-
-SFTP использует права пользователя, под которым открыт SSH. Переход в root внутри терминала не повышает права файловой панели. Одновременно поддерживается одна передача на сессию. Передача папок, работа с символическими ссылками, удаление, переименование и права файлов пока не реализованы. RX/TX в строке состояния относятся к терминалу; объём SFTP виден в панели передачи.
-
-Сочетания Ctrl+C, Ctrl+V, Ctrl+Shift+C/V, Ctrl+F и Ctrl+K распознаются по физическим клавишам независимо от раскладки. Копирование и вставка используют системный буфер Electron. Горячие клавиши терминала не перехватывают копирование или вставку в поля форм.
-
-## Клавиши
-
-- `Ctrl+Shift+C` — скопировать выделение.
-- `Ctrl+V`, `Ctrl+Shift+V` или ПКМ в терминале — вставить; четыре и более строки требуют подтверждения.
-- `Ctrl+C` — скопировать выделенный текст; без выделения — прервать команду на сервере.
-- `Ctrl+F` — поиск по выводу терминала.
-- `Ctrl+K` — быстро найти и открыть сервер.
-- `Ctrl+Tab` — следующая вкладка.
-- `Ctrl++`, `Ctrl+-`, `Ctrl+0` — размер текста.
-- `Escape` — закрыть поиск или диалог.
-
-Строка состояния показывает данные активной сессии. RX/TX — скорость и общий объём данных терминала для текущего соединения (общий объём виден при наведении), без накладных расходов SSH. `TCP` — время установки дополнительного TCP-соединения с SSH-портом, проверка раз в 15 секунд; это не ICMP ping и не измерение задержки команд. При отключении старый терминальный вывод сохраняется до закрытия вкладки. Переподключение создаёт новое SSH-соединение в той же вкладке; показатели трафика начинаются заново.
-
-## Сборка
-
-Нужны Node.js 24 и pnpm 11.19.0. При необходимости установите pnpm командой `npm install --global pnpm@11.19.0`. В каталоге проекта:
-
-```powershell
-pnpm install --frozen-lockfile
-pnpm build
-pnpm test
-pnpm start
-pnpm dist
+```sh
+sudo apt install ./Amber-SSH-0.2.5-linux-amd64.deb
 ```
 
-Готовые portable EXE и ZIP появляются в каталоге `release` внутри проекта. Сборка без цифровой подписи издателя. Исходники интерфейса — `src`, SSH и хранение секретов — `electron`. Цвета вынесены в CSS; переключение темы, туннели и интеллектуальные подсказки пока не реализованы.
+**AppImage:** make it executable, then run it:
 
-SSH-соединение использует TCP_NODELAY: небольшие пакеты с нажатиями клавиш отправляются сразу. Символы в терминале по-прежнему отображает удалённый сервер; задержка сети и нагрузка сервера влияют на отклик.
+```sh
+chmod +x Amber-SSH-0.2.5-linux-x86_64.AppImage
+./Amber-SSH-0.2.5-linux-x86_64.AppImage
+```
 
-## Проверки и ограничения
+If FUSE is unavailable, use `--appimage-extract-and-run` or extract the tar.gz and run `./amber-ssh`. Arch uses the AppImage or archive, rather than the DEB package. Linux password saving needs an unlocked GNOME Keyring or KWallet; without one, turn off “Remember password”.
 
-Версия 0.2.4 доступна в portable EXE и ZIP с уже распакованным приложением. Контрольный запуск готового EXE прошёл: приложение запустилось без установки, показало интерфейс и открыло форму подключения через защищённый IPC. Проверка выполнялась с отдельной тестовой базой. При включённом Smart App Control неподписанная сборка может блокироваться; добавить отдельное исключение для приложения в его настройках нельзя. Настройки защиты при сборке не изменялись.
+**Builds are currently unsigned.** Windows may show a warning or block execution through Smart App Control. SHA256 files in each release help check download integrity; they are not publisher signatures. See [code signing](CODE_SIGNING.md).
 
-17 автоматических тестов проверяют валидацию параметров, fingerprint, обработку sudo-запроса, безопасный импорт/экспорт, команды и восстановление положения окна. Дополнительная интеграционная проверка в Electron с локальным SSH/SFTP-сервером проверяет поиск, подтверждение и отмену команд, сохранение настроек, предпросмотр вставки, импорт/экспорт, список файлов, загрузку, скачивание, замену и отмену передачи с сохранением прежнего локального файла. Интеграционная проверка с локальным SSH-сервером проверяет вход, шифрование пароля Windows, сохранение после перезапуска, терминальный ввод, отключение, sudo-автоввод и отклонение изменившегося ключа сервера. Тестовый сервер имитирует поведение sudo; работу с настоящим Linux/PAM нужно дополнительно проверить на ваших виртуалках. Приложение не содержит предустановленных серверов и не отправляет пароли в сторонние сервисы.
+## What you can do
 
-## Сборки на GitHub
+- Save connections and open independent terminal tabs; authenticate with a password or SSH key.
+- Store passwords locally using Windows DPAPI or a supported Linux system keyring.
+- Use “Switch to root” or automatic root login with your saved user password, when your server allows sudo.
+- Reconnect in the same tab while keeping terminal scrollback, and search terminal output.
+- Copy and paste with shortcuts that work across keyboard layouts; preview pastes of four or more lines.
+- Find connections quickly, save commands with a confirmation before running, and import/export connection settings without secrets.
+- Browse remote directories and upload/download individual files using the SFTP side panel.
+- Switch between English and Russian without closing sessions.
 
-Workflow **Windows build** запускает тесты и собирает Windows x64 portable EXE и ZIP с распакованным приложением.
-В разделе **Actions** откройте успешный запуск и скачайте артефакт
-`Amber-SSH-Windows-x64-unsigned`. Распакуйте ZIP и запустите EXE.
-Для постоянной ссылки друзьям готовые сборки размещаются в **Releases**.
-Файл `SHA256SUMS.txt` позволяет проверить целостность загрузки; это не цифровая подпись.
+![SFTP beside the terminal](assets/screenshot-sftp.png)
 
-Сборки пока **не подписаны**. Открытые исходники не снимают ограничения
-Smart App Control. Бесплатная подпись SignPath ещё не получена и не гарантирована.
-См. [Code signing policy](CODE_SIGNING.md) и [Security](SECURITY.md).
+*Screenshots show the actual app connected to an isolated local demo server. No personal servers or credentials are shown.*
 
-## Лицензия и участие
+## First connection
 
-Исходники Amber SSH опубликованы под [MIT](LICENSE).
-Зависимости сохраняют свои лицензии. Правила участия — [CONTRIBUTING.md](CONTRIBUTING.md).
-Пароли, SSH-ключи и пользовательская база подключений не входят в репозиторий.
+1. Click **+** below the connection list and enter the name, address and user.
+2. Choose password or key authentication. Set “Remember password” if you want it stored locally.
+3. Connect, verify the server fingerprint using a trusted source, then approve it.
+4. Open the session menu **⋮** for SFTP, reconnecting or switching to root.
 
-## Linux x64
+`Ctrl+C` copies selected text; without a selection it interrupts the remote command. `Ctrl+V` or right-click pastes, `Ctrl+F` searches terminal output, and `Ctrl+K` finds a connection. Change the interface language from **⋮** beside **Connections**.
 
-Это отдельная Linux-сборка Electron; Wine и эмуляция не используются.
+## Status and limitations
 
-- Debian / Ubuntu / Mint: скачайте `.deb` и установите `sudo apt install ./Amber-SSH-0.2.5-linux-amd64.deb`. Приложение появится в меню.
-- Arch Linux и другие дистрибутивы: скачайте `.tar.gz`, распакуйте всю папку и запустите `./amber-ssh` из неё. Нужны системные библиотеки Electron (GTK, NSS, ALSA и остальные зависимости рабочего стола). `.deb` на Arch не устанавливается.
-- AppImage: `chmod +x Amber-SSH-0.2.5-linux-x86_64.AppImage`, затем запустите файл. Если FUSE недоступен, используйте архив или `./Amber-SSH-0.2.5-linux-x86_64.AppImage --appimage-extract-and-run`.
+Amber SSH is an early project and has not undergone an independent security audit. Saved-password encryption does not protect against malware running as your user. There are no built-in telemetry, analytics or update-check services. Read [Security](SECURITY.md) before relying on it for sensitive work.
 
-Для сохранения паролей должно быть доступно разблокированное системное хранилище GNOME Keyring либо KWallet. В минимальном Arch оно может потребовать отдельной настройки. Данные находятся в `${XDG_CONFIG_HOME:-~/.config}/amber-ssh/`; шифрованные пароли нельзя переносить между Windows и Linux. Экспорт подключений без секретов работает между платформами.
+Sudo automation applies to the app's root action and standard sudo prompts; it does not automatically fill arbitrary commands or MFA challenges. SFTP keeps the original SSH user's permissions, even after switching to root in the terminal. Folder transfers, rename/delete actions, SSH tunnels, command completion and theme switching are not implemented yet.
 
-Запускайте приложение от обычного пользователя. Не отключайте Chromium sandbox через `--no-sandbox`. Linux build в GitHub Actions собирает AppImage, DEB и tar.gz и проверяет запуск распакованного приложения под Xvfb с GNOME Keyring. Сборка ориентирована на современные настольные Linux x64; работу на конкретном дистрибутиве следует проверить.
+The status bar's TCP value measures connection setup to the SSH port, not ICMP ping or command latency. RX/TX refers to terminal traffic; SFTP progress is shown separately.
 
-Локальная сборка на Linux: `pnpm install --frozen-lockfile`, `pnpm test`, `pnpm dist:linux`.
+## Help improve Amber SSH
+
+Try a build and [report a bug](https://github.com/O1SEeez/amber-ssh/issues/new) with your OS, app version, steps and expected result. Remove real hosts, passwords, keys and sensitive terminal output from attachments. Security issues need a [private reporting channel](SECURITY.md).
+
+Feedback, documentation improvements and small fixes are welcome. If Amber SSH is useful to you, a GitHub star helps others discover it. See [contributing](CONTRIBUTING.md) for development and review guidelines.
+
+## Build from source
+
+Use Node.js 24 and pnpm 11.19.0:
+
+```sh
+git clone https://github.com/O1SEeez/amber-ssh.git
+cd amber-ssh
+pnpm install --frozen-lockfile
+pnpm test
+pnpm build
+pnpm start
+```
+
+Package on Windows with `pnpm dist` (portable EXE), or on Linux with `pnpm dist:linux` (AppImage, DEB and tar.gz). Output is written to `release/`.
+
+Built with Electron, React, TypeScript, xterm.js and ssh2. See the [detailed Russian guide](GUIDE.ru.md), [changelog](CHANGELOG.md) and [build workflows](.github/workflows).
+
+## License
+
+[MIT](LICENSE). Dependencies retain their own licenses.
