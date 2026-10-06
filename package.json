@@ -1,6 +1,6 @@
 {
   "name": "amber-ssh",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "description": "Minimal personal SSH client",
   "author": "O1SEeez",
@@ -39,7 +39,9 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "locales/**/*",
+      "assets/icon.png"
     ],
     "asar": true,
     "win": {
@@ -47,7 +49,8 @@
         "portable",
         "zip"
       ],
-      "signAndEditExecutable": false
+      "icon": "assets/icon.ico",
+      "signExecutable": false
     },
     "artifactName": "Amber-SSH-${version}-${arch}.${ext}",
     "npmRebuild": false
