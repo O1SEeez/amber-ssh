@@ -1,3 +1,4 @@
+import {t as tr} from './i18n';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {ShieldCheck,ShieldAlert,LogOut,Trash2,ClipboardPaste,Terminal,Files,X} from 'lucide-react';
 export type ConfirmationOptions={kind?:string;title:string;message:string;acceptLabel:string;cancelLabel?:string;warning?:boolean;address?:string;fingerprint?:string;previousFingerprint?:string;preview?:string};
@@ -30,12 +31,12 @@ function ConfirmationDialog({options:o,onAnswer}:{options:ConfirmationOptions;on
   const Icon=o.kind==='host'?(o.warning?ShieldAlert:ShieldCheck):o.kind==='remove'?Trash2:o.kind==='paste'?ClipboardPaste:o.kind==='command'?Terminal:o.kind==='transfer'?Files:LogOut;
   return <div className="modal-backdrop confirmation-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)onAnswer(false);}}>
     <div ref={ref} className={`modal confirmation-modal ${o.warning?'confirmation-warning':''}`} role="alertdialog" aria-modal="true" aria-labelledby="confirmation-title" aria-describedby="confirmation-description">
-      <div className="confirmation-top"><div className="confirmation-symbol"><Icon size={23}/></div><button className="icon-button" aria-label="Отмена" onClick={()=>onAnswer(false)}><X size={18}/></button></div>
+      <div className="confirmation-top"><div className="confirmation-symbol"><Icon size={23}/></div><button className="icon-button" aria-label={tr("Отмена")} onClick={()=>onAnswer(false)}><X size={18}/></button></div>
       <h2 id="confirmation-title">{o.title}</h2><p id="confirmation-description">{o.message}</p>
       {o.address&&<div className="confirmation-address">{o.address}</div>}
-      {o.preview!==undefined&&<div className="command-preview"><span>Будет отправлено в терминал</span><pre>{o.preview}</pre></div>}
-      {o.fingerprint&&<div className="fingerprint-block"><span>Отпечаток ключа сервера</span><code>{o.fingerprint}</code>{o.previousFingerprint&&<><span className="previous-label">Ранее сохранённый</span><code className="previous-fingerprint">{o.previousFingerprint}</code></>}</div>}
-      <div className="modal-footer"><button data-cancel className="secondary" onClick={()=>onAnswer(false)}>{o.cancelLabel||'Отмена'}</button><button className="primary" onClick={()=>onAnswer(true)}>{o.acceptLabel}</button></div>
+      {o.preview!==undefined&&<div className="command-preview"><span>{tr("Будет отправлено в терминал")}</span><pre>{o.preview}</pre></div>}
+      {o.fingerprint&&<div className="fingerprint-block"><span>{tr("Отпечаток ключа сервера")}</span><code>{o.fingerprint}</code>{o.previousFingerprint&&<><span className="previous-label">{tr("Ранее сохранённый")}</span><code className="previous-fingerprint">{o.previousFingerprint}</code></>}</div>}
+      <div className="modal-footer"><button data-cancel className="secondary" onClick={()=>onAnswer(false)}>{o.cancelLabel||tr("Отмена")}</button><button className="primary" onClick={()=>onAnswer(true)}>{o.acceptLabel}</button></div>
     </div>
   </div>;
 }
