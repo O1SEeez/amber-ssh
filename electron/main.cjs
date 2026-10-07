@@ -8,7 +8,7 @@ const net = require('node:net');
 const {StringDecoder} = require('node:string_decoder');
 const {validateProfile,rootCommand,fingerprint,isSudoPrompt,createOutputFilter} = require('./security.cjs');
 const {Confirmations}=require('./confirmations.cjs');
-const {exportConnections,importConnections,mergeConnections,validateCommands,visibleBounds}=require('./features.cjs');
+const {validateCommands,visibleBounds}=require('./features.cjs');
 const {registerSftp}=require('./sftp.cjs');
 let win, db, storePath;
 const confirmations=new Confirmations(event=>{if(win&&!win.isDestroyed())win.webContents.send('ssh:event',event);});
@@ -81,10 +81,7 @@ app.whenReady().then(()=>{
     if(!await confirmations.request({kind:'command',sessionId:id,title:t("Выполнить быструю команду?"),message:`${command.name} · ${owner?.username||s.username}@${owner?.host||t("сервер")}`,preview:command.command,acceptLabel:t("Выполнить")}))return {canceled:true};
     if(sessions.get(id)!==s||s.closed||!s.channel)throw new Error(t("Сессия изменилась"));const input=command.command.replace(/\n/g,'\r')+'\r';s.channel.write(input);s.tx+=Buffer.byteLength(input);return {canceled:false};
   });
-  wrap('profiles:export',async()=>{const selected=await dialog.showSaveDialog(win,{title:t("Экспорт подключений без секретов"),defaultPath:'amber-ssh-connections.json',filters:[{name:'JSON',extensions:['json']}]});if(selected.canceled)return {canceled:true};if([storePath,settingsPath].some(file=>path.resolve(file).toLowerCase()===path.resolve(selected.filePath).toLowerCase()))throw new Error(t("Выберите другой файл: нельзя заменить внутреннюю базу приложения"));fs.writeFileSync(selected.filePath,JSON.stringify(exportConnections(db.profiles),null,2));return {canceled:false,count:db.profiles.length};});
-  let pendingImport;
-  wrap('profiles:import-preview',async()=>{pendingImport=null;const selected=await dialog.showOpenDialog(win,{title:t("Импорт подключений"),properties:['openFile'],filters:[{name:'JSON',extensions:['json']}]});if(selected.canceled)return {canceled:true};const file=selected.filePaths[0];if(fs.statSync(file).size>1048576)throw new Error(t("Файл импорта слишком большой"));const profiles=importConnections(JSON.parse(fs.readFileSync(file,'utf8')));const merged=mergeConnections(db.profiles,profiles);pendingImport={token:crypto.randomUUID(),profiles};return {canceled:false,token:pendingImport.token,added:merged.added,skipped:merged.skipped,names:profiles.slice(0,10).map(p=>p.name)};});
-  wrap('profiles:import-apply',(token,accepted)=>{if(!pendingImport||token!==pendingImport.token)throw new Error(t("Предпросмотр импорта устарел"));const incoming=pendingImport.profiles;pendingImport=null;if(accepted!==true)return {canceled:true};const previous=db.profiles,merged=mergeConnections(previous,incoming);db.profiles=merged.profiles;try{persist();}catch(error){db.profiles=previous;throw error;}return {canceled:false,added:merged.added,skipped:merged.skipped};});
+  require('./backup-ipc.cjs').registerBackups({wrap,dialog,win,db,persist,encrypt,decrypt,storePath,settingsPath,t});
   registerSftp({wrap,sessions,dialog,getWindow:()=>win,confirmations,emit});
   wrap('dialog:answer',(id,accepted)=>confirmations.answer(id,accepted));
   wrap('profiles:save',(raw,secrets={})=>{
