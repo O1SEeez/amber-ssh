@@ -13,7 +13,7 @@ A minimal SSH desktop client for Windows and Linux, with a calm dark interface a
 
 | Platform | Build | Version |
 | --- | --- | --- |
-| Windows 10/11 x64 | [ZIP — recommended](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.4/Amber-SSH-0.2.4-x64.zip) · [Single EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.4/Amber-SSH-0.2.4-x64.exe) | 0.2.4 |
+| Windows 10/11 x64 | [ZIP — recommended](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.6/Amber-SSH-0.2.6-x64.zip) · [Single EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.6/Amber-SSH-0.2.6-x64.exe) | 0.2.6 |
 | Debian / Ubuntu / Mint x64 | [DEB installer](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-amd64.deb) | 0.2.5 |
 | Linux x64, including Arch | [AppImage](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x86_64.AppImage) · [tar.gz](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x64.tar.gz) | 0.2.5 |
 
@@ -46,6 +46,7 @@ If FUSE is unavailable, use `--appimage-extract-and-run` or extract the tar.gz a
 - Reconnect in the same tab while keeping terminal scrollback, and search terminal output.
 - Copy and paste with shortcuts that work across keyboard layouts; preview pastes of four or more lines.
 - Find connections quickly, save commands with a confirmation before running, and import/export connection settings without secrets.
+- Transfer saved passwords between computers using a password-protected encrypted backup (0.2.6+).
 - Browse remote directories and upload/download individual files using the SFTP side panel.
 - Switch between English and Russian without closing sessions.
 
@@ -61,6 +62,14 @@ If FUSE is unavailable, use `--appimage-extract-and-run` or extract the tar.gz a
 4. Open the session menu **⋮** for SFTP, reconnecting or switching to root.
 
 `Ctrl+C` copies selected text; without a selection it interrupts the remote command. `Ctrl+V` or right-click pastes, `Ctrl+F` searches terminal output, and `Ctrl+K` finds a connection. Change the interface language from **⋮** beside **Connections**.
+
+## Transfer connections with passwords (0.2.6+)
+
+Open **⋮** beside **Connections** → **Export with passwords**. Choose a long, unique file password (at least 12 characters), repeat it and save the `.amber` file. On the other computer, choose **Import connections**, select that file, enter its password and confirm the preview. Saved SSH passwords and key passphrases are restored and encrypted with the target computer's system storage.
+
+The complete connection list, including server names and addresses, is encrypted using AES-256-GCM with a scrypt-derived key. The file password is not saved or recoverable. Only persisted secrets are included; SSH key files and paths, temporary session passwords, trusted host fingerprints and automatic root login are excluded. Select keys again and verify each server fingerprint. Existing connections are skipped, not overwritten.
+
+The ordinary JSON export still excludes secrets. Linux requires an available system keyring to restore saved secrets. Linux 0.2.5 does not support encrypted backups; use a 0.2.6+ build on both computers. [Format and security details](BACKUP.md).
 
 ## Status and limitations
 
@@ -89,7 +98,7 @@ pnpm build
 pnpm start
 ```
 
-Package on Windows with `pnpm dist` (portable EXE), or on Linux with `pnpm dist:linux` (AppImage, DEB and tar.gz). Output is written to `release/`.
+Package on Windows with `pnpm dist` (portable EXE and ZIP), or on Linux with `pnpm dist:linux` (AppImage, DEB and tar.gz). Output is written to `release/`.
 
 Built with Electron, React, TypeScript, xterm.js and ssh2. See the [detailed Russian guide](GUIDE.ru.md), [changelog](CHANGELOG.md) and [build workflows](.github/workflows).
 

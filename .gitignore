@@ -19,3 +19,8 @@ id_rsa*
 id_ed25519*
 .DS_Store
 Thumbs.db
+
+# Personal connection exports and encrypted backups
+*.amber
+*.amber.*.tmp
+amber-ssh-connections.json
