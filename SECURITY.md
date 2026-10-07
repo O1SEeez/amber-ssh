@@ -18,3 +18,8 @@ SSH host fingerprints require confirmation, including when a known key changes.
 The app does not change sudoers or Windows security settings.
 
 See [Code signing policy](CODE_SIGNING.md) for the current unsigned-build status.
+
+Encrypted `.amber` backups include persisted SSH passwords and key passphrases.
+Their protection depends on the separate file password. Use a long unique
+password and keep the backup private. The password is not stored or recoverable.
+See [backup format](BACKUP.md) for cryptography and import boundaries.
