@@ -13,6 +13,7 @@ import {useConfirmation,type ConfirmationOptions} from './Confirmation';
 import {Commands,ServerPalette,SftpPane,type QuickCommand} from './Features';
 import {enableSelectionEdgeScroll} from './terminalSelection';
 import {pasteNeedsConfirmation} from './paste';
+import {createTerminalInput} from './terminalInput';
 import {BackupPassword,type BackupPasswordOptions} from './BackupPassword';
 type ImportPreview={canceled:boolean;token:string;locked?:boolean;encrypted?:boolean;added:number;skipped:number;names:string[]};
 type Profile={id:string;name:string;host:string;port:number;username:string;auth:'password'|'key';keyPath:string;remember:boolean;autoRoot:boolean;hasPassword?:boolean;hasPassphrase?:boolean};
@@ -22,7 +23,7 @@ type Tab={id:string;profile:Profile;status:string;error?:string;rx:number;tx:num
 declare global {interface Window{amber?:{profiles:()=>Promise<Result<Profile[]>>;copy:(text:string)=>Promise<Result>;clipboardText:()=>Promise<Result<string>>;save:(p:Profile,s:{password:string;passphrase:string})=>Promise<Result<Profile>>;remove:(id:string)=>Promise<Result>;key:()=>Promise<Result<string>>;connect:(id:string,s:object,size:object,resumeId?:string)=>Promise<Result<{id:string}>>;disconnect:(id:string,forget?:boolean)=>Promise<Result>;root:(id:string)=>Promise<Result>;answer:(id:string,accepted:boolean)=>Promise<Result>;input:(id:string,data:string)=>void;resize:(id:string,cols:number,rows:number)=>void;window:(action:string)=>void;settings:()=>Promise<Result<{fontSize:number;commands:QuickCommand[];language:Language}>>;language:(value:Language)=>Promise<Result<Language>>;font:(size:number)=>Promise<Result<number>>;commandsSave:(commands:QuickCommand[])=>Promise<Result<QuickCommand[]>>;commandsRun:(id:string,commandId:string)=>Promise<Result>;exportProfiles:(options?:{encrypted:true;password:string})=>Promise<Result<{canceled:boolean;count:number}>>;importPreview:()=>Promise<Result<ImportPreview>>;importUnlock:(token:string,password:string)=>Promise<Result<ImportPreview>>;importApply:(token:string,accepted:boolean)=>Promise<Result<{canceled:boolean;added:number;skipped:number}>>;sftpList:(id:string,path:string)=>Promise<Result<{path:string;entries:{name:string;directory:boolean;link:boolean;size:number;modified:number}[]}>>;sftpUpload:(id:string,path:string)=>Promise<Result<{canceled:boolean}>>;sftpDownload:(id:string,path:string)=>Promise<Result<{canceled:boolean}>>;sftpCancel:(id:string)=>Promise<Result>;onEvent:(cb:(e:SSHEvent)=>void)=>()=>void}}}
 const api=window.amber;
 let preferredFontSize=14;
-function applyFont(size:number){preferredFontSize=size;for(const [id,t] of terminals){t.terminal.options.fontSize=size;t.fit.fit();api?.resize(id,t.terminal.cols,t.terminal.rows);}}
+function applyFont(size:number){preferredFontSize=size;for(const [id,t] of terminals){t.terminal.options.fontSize=size;if(t.terminal.element?.parentElement?.offsetWidth){t.fit.fit();api?.resize(id,t.terminal.cols,t.terminal.rows);}}}
 const fresh=():Profile=>({id:'',name:'',host:'',port:22,username:'',auth:'password',keyPath:'',remember:true,autoRoot:false});
 const rate=(n:number)=>n>=1048576?`${(n/1048576).toFixed(1)} MB/s`:`${(n/1024).toFixed(1)} KB/s`;
 const volume=(n:number)=>n>=1048576?`${(n/1048576).toFixed(1)} MB`:`${(n/1024).toFixed(1)} KB`;
@@ -36,26 +37,27 @@ function TerminalPane({tab,active,onFind,onConfirm,onFontChange,onNotice}:{tab:T
     const fit=new FitAddon(),search=new SearchAddon();term.loadAddon(fit);term.loadAddon(search);term.open(ref.current!);terminals.set(tab.id,{terminal:term,fit,search});
     const stopSelectionScroll=enableSelectionEdgeScroll(ref.current!,term);
     for(const data of buffers.get(tab.id)||[])term.write(data);buffers.delete(tab.id);
-    const input=term.onData(data=>api?.input(tab.id,data));
+    const stream=createTerminalInput(data=>api?.input(tab.id,data));
+    const input=term.onData(data=>stream.write(data));
     async function copy(){try{const text=term.getSelection();if(api){const result=await api.copy(text);if(!result.ok)throw new Error(result.error||tr("Не удалось скопировать"));}else await navigator.clipboard.writeText(text);}catch(error){onNotice(error instanceof Error?error.message:tr("Не удалось скопировать"));}}
-    let pastePending=false;
-    async function paste(text:string){
-      if(pastePending)return;pastePending=true;
-      try{
-        if(text.length>20000){await onConfirm({kind:'paste',title:tr("Слишком большой текст"),message:tr("Для вставки команд поддерживается до 20 000 символов. Передайте большой файл через SFTP."),acceptLabel:tr("Понятно")});return;}
-        if(pasteNeedsConfirmation(text)&&!await onConfirm({kind:'paste',title:tr("Вставить несколько строк?"),message:tr("Этот текст будет отправлен в активную сессию. Переводы строк могут выполнить команды на сервере."),preview:text,acceptLabel:tr("Вставить")}))return;
-        term.paste(text);
-      }finally{pastePending=false;}
+    let disposed=false;
+    async function paste(read:()=>Promise<string>){
+      term.focus();
+      try{await stream.paste(read,async text=>{
+        if(disposed)return false;
+        if(text.length>20000){await onConfirm({kind:'paste',title:tr("Слишком большой текст"),message:tr("Для вставки команд поддерживается до 20 000 символов. Передайте большой файл через SFTP."),acceptLabel:tr("Понятно")});return false;}
+        if(pasteNeedsConfirmation(text)&&!await onConfirm({kind:'paste',title:tr("Вставить несколько строк?"),message:tr("Этот текст будет отправлен в активную сессию. Переводы строк могут выполнить команды на сервере."),preview:text,acceptLabel:tr("Вставить")}))return false;
+        if(disposed)return false;
+        stream.insert(()=>term.paste(text));if(ref.current?.offsetWidth&&!document.querySelector('[aria-modal="true"]'))term.focus();return true;
+      });}catch(error){if(!disposed)onNotice(error instanceof Error?error.message:tr("Не удалось вставить текст"));}
     }
-    const nativePaste=(event:ClipboardEvent)=>{const value=event.clipboardData?.getData('text/plain');if(value!==undefined){event.preventDefault();event.stopImmediatePropagation();void paste(value);}};
+    const nativePaste=(event:ClipboardEvent)=>{const value=event.clipboardData?.getData('text/plain');if(value!==undefined){event.preventDefault();event.stopImmediatePropagation();void paste(async()=>value);}};
     ref.current!.addEventListener('paste',nativePaste,true);
-    async function pasteClipboard(){
-      try{
-        const result=api?await api.clipboardText():{ok:true,value:await navigator.clipboard.readText()};
-        if(!result.ok)throw new Error(result.error||tr("Не удалось прочитать буфер обмена"));
-        await paste(result.value);
-      }catch(error){onNotice(error instanceof Error?error.message:tr("Не удалось вставить текст"));}
-    }
+    function pasteClipboard(){return paste(async()=>{
+      const result=api?await api.clipboardText():{ok:true,value:await navigator.clipboard.readText()};
+      if(!result.ok)throw new Error(result.error||tr("Не удалось прочитать буфер обмена"));
+      return result.value;
+    });}
     const shortcut=(event:KeyboardEvent)=>{
       const container=ref.current;
       if(!container?.offsetWidth||!event.ctrlKey||event.altKey||event.metaKey||document.querySelector('[aria-modal="true"]'))return;
@@ -66,7 +68,7 @@ function TerminalPane({tab,active,onFind,onConfirm,onFontChange,onNotice}:{tab:T
       event.preventDefault();event.stopImmediatePropagation();
       if(code==='KeyV'){void pasteClipboard();return;}
       if(term.hasSelection()){void copy();return;}
-      if(!event.shiftKey)api?.input(tab.id,'\x03');
+      if(!event.shiftKey)stream.write('\x03');
     };
     const contextPaste=(event:MouseEvent)=>{
       if(document.querySelector('[aria-modal="true"]'))return;
@@ -81,9 +83,16 @@ function TerminalPane({tab,active,onFind,onConfirm,onFontChange,onNotice}:{tab:T
       return true;
     });
     const observer=new ResizeObserver(()=>{if(ref.current?.offsetWidth){fit.fit();api?.resize(tab.id,term.cols,term.rows);}});observer.observe(ref.current!);
-    return()=>{stopSelectionScroll();window.removeEventListener('keydown',shortcut,true);ref.current?.removeEventListener('contextmenu',contextPaste,true);ref.current?.removeEventListener('paste',nativePaste,true);observer.disconnect();input.dispose();term.dispose();terminals.delete(tab.id);buffers.delete(tab.id);};
+    return()=>{disposed=true;stream.dispose();stopSelectionScroll();window.removeEventListener('keydown',shortcut,true);ref.current?.removeEventListener('contextmenu',contextPaste,true);ref.current?.removeEventListener('paste',nativePaste,true);observer.disconnect();input.dispose();term.dispose();terminals.delete(tab.id);buffers.delete(tab.id);};
   },[tab.id]);
-  useEffect(()=>{if(active){requestAnimationFrame(()=>{const t=terminals.get(tab.id);t?.fit.fit();t?.terminal.focus();if(t)api?.resize(tab.id,t.terminal.cols,t.terminal.rows);});}},[active,tab.id]);
+  useEffect(()=>{
+    if(!active)return;
+    const frame=requestAnimationFrame(()=>{
+      const t=terminals.get(tab.id);if(!t||!ref.current?.offsetWidth)return;
+      t.fit.fit();api?.resize(tab.id,t.terminal.cols,t.terminal.rows);
+      if(!document.querySelector('[aria-modal="true"]'))t.terminal.focus();
+    });return()=>cancelAnimationFrame(frame);
+  },[active,tab.id,tab.status]);
   return <div className={`terminal-pane ${active?'visible':''}`} ref={ref}/>;
 }
 function App(){
