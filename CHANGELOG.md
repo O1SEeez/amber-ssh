@@ -1,5 +1,14 @@
 # Изменения
 
+## 0.2.8
+
+- Windows installer with GitHub release checks after startup and every six hours; manual check in the title bar.
+- Explicit download and restart actions, progress, retry after errors and confirmation before closing active SSH sessions or SFTP transfers.
+- Standard electron-updater NSIS updates with SHA512 download integrity checks. Normal application exit does not install pending updates.
+- Preserve the application identity, connection database and OS-encrypted passwords. Portable EXE/ZIP builds remain available with manual updates.
+- Publish latest.yml and installer blockmap alongside the setup executable; add six updater regression tests.
+- Verified an isolated installed 0.2.7 → 0.2.8 upgrade, corrupt-download rejection, cancellation, automatic restart and subsequent SSH authentication with an unchanged saved password.
+
 ## 0.2.7
 
 - Preserve fitted terminal dimensions throughout SSH authentication and shell creation, fixing wrapped-command cursor movement into earlier output.

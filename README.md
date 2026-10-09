@@ -13,13 +13,15 @@ A minimal SSH desktop client for Windows and Linux, with a calm dark interface a
 
 | Platform | Build | Version |
 | --- | --- | --- |
-| Windows 10/11 x64 | [ZIP — recommended](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.7/Amber-SSH-0.2.7-x64.zip) · [Single EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.7/Amber-SSH-0.2.7-x64.exe) | 0.2.7 |
+| Windows 10/11 x64 | [Installer — automatic updates](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.8/Amber-SSH-Setup-0.2.8-x64.exe) · [Portable ZIP](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.8/Amber-SSH-0.2.8-x64.zip) · [Single EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.8/Amber-SSH-0.2.8-x64.exe) | 0.2.8 |
 | Debian / Ubuntu / Mint x64 | [DEB installer](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-amd64.deb) | 0.2.5 |
 | Linux x64, including Arch | [AppImage](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x86_64.AppImage) · [tar.gz](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x64.tar.gz) | 0.2.5 |
 
 macOS is planned; no Mac build is available yet. These are the latest available builds for each platform.
 
-**Windows:** extract the entire ZIP and run `Amber SSH.exe` inside it. Keep the other files alongside the EXE. The single-file EXE extracts itself on every launch and can start more slowly.
+**Windows:** run **Amber-SSH-Setup-0.2.8-x64.exe** to install for your user. Existing connections and saved passwords remain available when using the same Windows account. Close the old portable client before installation and use the installed shortcut afterward. Future releases appear in the title bar: click to download, then **Restart and update**. Open SSH sessions require confirmation before closing. Downloading an update does not install it when you close the app normally.
+
+Portable builds remain available: extract the entire ZIP and run `Amber SSH.exe` inside it, keeping the other files alongside the EXE. The single-file EXE extracts itself on every launch and can start more slowly. Portable EXE/ZIP builds and Linux builds use manual updates. [Update behavior and publishing details](UPDATES.md).
 
 **Debian / Ubuntu / Mint:** install the downloaded package with:
 
@@ -49,6 +51,7 @@ If FUSE is unavailable, use `--appimage-extract-and-run` or extract the tar.gz a
 - Transfer saved passwords between computers using a password-protected encrypted backup (0.2.6+).
 - Browse remote directories and upload/download individual files using the SFTP side panel.
 - Switch between English and Russian without closing sessions.
+- Check for Windows updates automatically in installed builds; download and restart only when you choose.
 
 ![SFTP beside the terminal](assets/screenshot-sftp.png)
 
@@ -73,7 +76,7 @@ The ordinary JSON export still excludes secrets. Linux requires an available sys
 
 ## Status and limitations
 
-Amber SSH is an early project and has not undergone an independent security audit. Saved-password encryption does not protect against malware running as your user. There are no built-in telemetry, analytics or update-check services. Read [Security](SECURITY.md) before relying on it for sensitive work.
+Amber SSH is an early project and has not undergone an independent security audit. Saved-password encryption does not protect against malware running as your user. There is no built-in telemetry or analytics. Installed Windows builds check public GitHub releases; server addresses, passwords and terminal output are never included in update requests. Read [Security](SECURITY.md) before relying on it for sensitive work.
 
 Sudo automation applies to the app's root action and standard sudo prompts; it does not automatically fill arbitrary commands or MFA challenges. SFTP keeps the original SSH user's permissions, even after switching to root in the terminal. Folder transfers, rename/delete actions, SSH tunnels, command completion and theme switching are not implemented yet.
 

@@ -23,3 +23,10 @@ Encrypted `.amber` backups include persisted SSH passwords and key passphrases.
 Their protection depends on the separate file password. Use a long unique
 password and keep the backup private. The password is not stored or recoverable.
 See [backup format](BACKUP.md) for cryptography and import boundaries.
+
+Installed Windows builds check stable releases on the fixed public GitHub
+repository over HTTPS. Updates require explicit download and restart actions;
+SHA512 integrity verification is handled by electron-updater. Release checks
+never include connection profiles, credentials or terminal content. Builds are
+currently unsigned: checksums cannot establish independent publisher identity.
+See [update behavior](UPDATES.md).

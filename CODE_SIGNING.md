@@ -27,7 +27,8 @@ that chosen server for authentication; sudo password input is sent within the
 SSH session when the user requests elevation. The application also opens TCP
 connections to the selected SSH port to measure connection setup time.
 
-There are no built-in telemetry, analytics or update-check services. Saved
+There are no built-in telemetry or analytics. Installed Windows builds check
+public GitHub releases; see [updates](UPDATES.md). Saved
 secrets are encrypted locally through Electron safeStorage: Windows DPAPI or a
 supported Linux system keyring. Insecure Linux plaintext backends are rejected.
 Private key files remain at the locations selected by the user. Connection
