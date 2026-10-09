@@ -34,7 +34,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - name: Verify packaged Linux app with system keyring
         run: |
-          dbus-run-session -- bash -c 'printf "%s\n" amber-ci-keyring | gnome-keyring-daemon --unlock --components=secrets; xvfb-run -a node tests/linux-packaged-smoke.cjs'
+          dbus-run-session -- bash -ec 'printf "%s\n" amber-ci-keyring | gnome-keyring-daemon --unlock --components=secrets; xvfb-run -a node tests/linux-packaged-smoke.cjs; xvfb-run -a node tests/linux-terminal-integration.cjs'
       - name: Calculate checksums
         run: cd release && sha256sum *.AppImage *.deb *.tar.gz > SHA256SUMS-linux.txt
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
