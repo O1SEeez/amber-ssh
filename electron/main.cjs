@@ -10,6 +10,7 @@ const {validateProfile,rootCommand,fingerprint,isSudoPrompt,createOutputFilter} 
 const {Confirmations}=require('./confirmations.cjs');
 const {validateCommands,visibleBounds}=require('./features.cjs');
 const {registerSftp}=require('./sftp.cjs');
+const {createTerminalSize}=require('./terminal-size.cjs');
 let win, db, storePath;
 const confirmations=new Confirmations(event=>{if(win&&!win.isDestroyed())win.webContents.send('ssh:event',event);});
 const sessions=new Map();
@@ -104,7 +105,7 @@ app.whenReady().then(()=>{
     const passphrase=overrides.passphrase||decrypt(p.passphrase)||secrets.passphrase||'';
     if(p.auth==='password'&&!password)throw new Error(t("Введите пароль для подключения"));
     const privateKey=p.auth==='key'?fs.readFileSync(p.keyPath):undefined;
-    const s={id:resumeId||crypto.randomUUID(),client:new Client(),password,username:p.username,decoder:new StringDecoder('utf8'),rx:0,tx:0,prevRx:0,prevTx:0,closed:false,latency:null};sessions.set(s.id,s);tabOwners.set(s.id,profileId);
+    const s={id:resumeId||crypto.randomUUID(),client:new Client(),geometry:createTerminalSize(size),password,username:p.username,decoder:new StringDecoder('utf8'),rx:0,tx:0,prevRx:0,prevTx:0,closed:false,latency:null};sessions.set(s.id,s);tabOwners.set(s.id,profileId);
     emit(s,'status',{status:'connecting'});
     // Interactive keystrokes must not wait for TCP's small-packet batching.
     s.client.on('connect',()=>s.client.setNoDelay(true));
@@ -121,10 +122,11 @@ app.whenReady().then(()=>{
           }
         }catch(error){emit(s,'notice',{message:t("Вход выполнен, но сохранить пароль не удалось: ")+error.message});}
       }
-      s.client.shell({term:'xterm-256color',cols:Math.max(20,Math.min(500,Number(size.cols)||100)),rows:Math.max(5,Math.min(200,Number(size.rows)||30))},(err,channel)=>{
+      const requestedSize=s.geometry.snapshot();
+      s.client.shell({term:'xterm-256color',...requestedSize},(err,channel)=>{
         if(s.closed||sessions.get(s.id)!==s){channel?.end();return;}
         if(err){emit(s,'status',{status:'error',message:err.message});finish(s);return;}
-        s.channel=channel;emit(s,'status',{status:'connected'});
+        s.channel=channel;s.geometry.attach(channel,requestedSize);emit(s,'status',{status:'connected'});
         channel.on('data',data=>acceptOutput(s,data));channel.stderr.on('data',data=>acceptOutput(s,data));channel.on('close',()=>finish(s));
         probe(s,p);s.timer=setInterval(()=>{emit(s,'metrics',{rx:s.rx,tx:s.tx,rxRate:(s.rx-s.prevRx)/2,txRate:(s.tx-s.prevTx)/2,latency:s.latency});s.prevRx=s.rx;s.prevTx=s.tx;},2000);
         s.probeTimer=setInterval(()=>probe(s,p),15000);
@@ -158,7 +160,7 @@ app.whenReady().then(()=>{
   wrap('ssh:disconnect',(id,forget=false)=>{const s=sessions.get(id);if(s)finish(s);if(forget===true)tabOwners.delete(id);});
   wrap('ssh:root',id=>{const s=sessions.get(id);if(!s)throw new Error(t("Сессия отключена"));elevate(s);});
   ipcMain.on('ssh:input',(e,id,data)=>{authorized(e);const s=sessions.get(id);if(s?.channel&&typeof data==='string'&&data.length<=1048576){s.channel.write(data);s.tx+=Buffer.byteLength(data);}});
-  ipcMain.on('ssh:resize',(e,id,cols,rows)=>{authorized(e);if(Number.isInteger(cols)&&Number.isInteger(rows)&&cols>0&&rows>0&&cols<=1000&&rows<=500)sessions.get(id)?.channel?.setWindow(rows,cols,0,0);});
+  ipcMain.on('ssh:resize',(e,id,cols,rows)=>{authorized(e);sessions.get(id)?.geometry.update(cols,rows);});
   ipcMain.on('window:action',(e,action)=>{authorized(e);if(action==='close')win.close();if(action==='minimize')win.minimize();if(action==='maximize')win.isMaximized()?win.unmaximize():win.maximize();});
   let closeApproved=false,closePromptPending=false;
   win.on('close',event=>{
