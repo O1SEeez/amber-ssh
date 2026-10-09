@@ -1,5 +1,10 @@
 const {contextBridge, ipcRenderer} = require('electron');
 contextBridge.exposeInMainWorld('amber', {
+  updateState:()=>ipcRenderer.invoke('updates:state'),
+  updateCheck:()=>ipcRenderer.invoke('updates:check'),
+  updateDownload:()=>ipcRenderer.invoke('updates:download'),
+  updateInstall:()=>ipcRenderer.invoke('updates:install'),
+  updateRelease:()=>ipcRenderer.invoke('updates:release'),
   profiles:()=>ipcRenderer.invoke('profiles:list'),
   copy:text=>ipcRenderer.invoke('clipboard:write',text),
   clipboardText:()=>ipcRenderer.invoke('clipboard:read'),

@@ -1,5 +1,5 @@
 const {t,setLanguage}=require('./localization.cjs');
-const {app,BrowserWindow,ipcMain,dialog,safeStorage,screen,clipboard} = require('electron');
+const {app,BrowserWindow,ipcMain,dialog,safeStorage,screen,clipboard,shell} = require('electron');
 const {Client} = require('ssh2');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -11,6 +11,7 @@ const {Confirmations}=require('./confirmations.cjs');
 const {validateCommands,visibleBounds}=require('./features.cjs');
 const {registerSftp}=require('./sftp.cjs');
 const {createTerminalSize}=require('./terminal-size.cjs');
+const {createUpdates}=require('./updates.cjs');
 let win, db, storePath;
 const confirmations=new Confirmations(event=>{if(win&&!win.isDestroyed())win.webContents.send('ssh:event',event);});
 const sessions=new Map();
@@ -163,6 +164,16 @@ app.whenReady().then(()=>{
   ipcMain.on('ssh:resize',(e,id,cols,rows)=>{authorized(e);sessions.get(id)?.geometry.update(cols,rows);});
   ipcMain.on('window:action',(e,action)=>{authorized(e);if(action==='close')win.close();if(action==='minimize')win.minimize();if(action==='maximize')win.isMaximized()?win.unmaximize():win.maximize();});
   let closeApproved=false,closePromptPending=false;
+  const updateEnabled=app.isPackaged&&process.platform==='win32'&&!process.env.PORTABLE_EXECUTABLE_FILE&&fs.existsSync(path.join(process.resourcesPath,'amber-install-mode'));
+  const updates=createUpdates({enabled:updateEnabled,version:app.getVersion(),updater:updateEnabled?require('electron-updater').autoUpdater:null,t,
+    publish:update=>{if(!win.isDestroyed())win.webContents.send('ssh:event',{type:'update',update});},
+    confirmRestart:async()=>!sessions.size||await confirmations.request({kind:'update',title:t('Перезапустить и обновить?'),message:t('Открытые SSH-сессии и передачи файлов будут закрыты. Сохранённые подключения и пароли останутся.'),acceptLabel:t('Перезапустить и обновить'),cancelLabel:t('Позже')}),
+    beforeInstall:()=>{closeApproved=true;for(const s of sessions.values())finish(s);}
+  });
+  wrap('updates:state',()=>updates.get());wrap('updates:check',()=>updates.check());wrap('updates:download',()=>updates.download());wrap('updates:install',()=>updates.install());
+  wrap('updates:release',()=>shell.openExternal('https://github.com/O1SEeez/amber-ssh/releases/latest'));
+  if(updateEnabled&&!process.env.AMBER_TEST_DATA){const timer=setTimeout(()=>void updates.check(),10000);timer.unref();const interval=setInterval(()=>void updates.check(),6*60*60*1000);interval.unref();}
+
   win.on('close',event=>{
     if(!closeApproved&&sessions.size){event.preventDefault();if(closePromptPending)return;closePromptPending=true;
       confirmations.request({kind:'quit',title:t("Закрыть приложение?"),message:t("Все открытые SSH-сессии будут отключены. Сохранённые подключения останутся."),acceptLabel:t("Закрыть приложение"),cancelLabel:t("Остаться")}).then(accepted=>{closePromptPending=false;if(accepted&&!win.isDestroyed()){closeApproved=true;win.close();}});return;}
