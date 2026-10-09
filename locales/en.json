@@ -253,5 +253,22 @@
   "Экспортировать": "Export",
   "Зашифрованный файл с сохранёнными паролями создан.": "Encrypted file with saved passwords created.",
   ". Сохранённые пароли будут восстановлены. SSH-ключи нужно выбрать заново. Переход в root выключен.": ". Saved passwords will be restored. Select SSH keys again. Automatic root login is disabled.",
-  "Открыть": "Open"
+  "Открыть": "Open",
+  "Не удалось обновить приложение. Проверьте интернет и попробуйте снова.": "Could not update the app. Check your connection and try again.",
+  "Не удалось проверить обновления. Проверьте интернет и попробуйте снова.": "Could not check for updates. Check your connection and try again.",
+  "Не удалось скачать обновление. Проверьте интернет и попробуйте снова.": "Could not download the update. Check your connection and try again.",
+  "Не удалось установить обновление. Попробуйте снова.": "Could not install the update. Try again.",
+  "Перезапустить и обновить?": "Restart and update?",
+  "Открытые SSH-сессии и передачи файлов будут закрыты. Сохранённые подключения и пароли останутся.": "Open SSH sessions and file transfers will close. Saved connections and passwords will remain.",
+  "Перезапустить и обновить": "Restart and update",
+  "Позже": "Later",
+  "Автообновление Windows доступно в установленной версии. Скачать установщик.": "Windows auto-update is available in the installed version. Download the installer.",
+  "Проверить обновления": "Check for updates",
+  "Обновить до {0}": "Update to {0}",
+  "Загрузка {0}%": "Downloading {0}%",
+  "Установка…": "Installing…",
+  "Проверяем…": "Checking…",
+  "Установлена последняя версия": "You are up to date",
+  "Повторить проверку": "Retry update check",
+  "Установить версию с обновлениями": "Install the auto-updating version"
 }
