@@ -1,5 +1,14 @@
 # Изменения
 
+## 0.2.7
+
+- Preserve fitted terminal dimensions throughout SSH authentication and shell creation, fixing wrapped-command cursor movement into earlier output.
+- Apply the same valid size range to initial PTY requests and subsequent resizes; refresh geometry after reconnect and defer fitting hidden tabs.
+- Keep keystrokes after asynchronous clipboard reads in order: paste first, then arrows and typing. Canceled pastes and closed tabs discard pending input.
+- Retain xterm bracketed paste, Russian/English clipboard shortcuts and confirmation starting at four explicit lines.
+- Add regression tests for handshake/shell resize races and paste ordering, plus a packaged Linux SSH/Bash/readline integration check.
+
+
 ## 0.2.6
 
 - Зашифрованный экспорт сохранённых паролей и секретных фраз ключей с отдельным паролем файла.

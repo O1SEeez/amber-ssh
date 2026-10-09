@@ -13,7 +13,7 @@
 
 | Платформа | Сборка | Версия |
 | --- | --- | --- |
-| Windows 10/11 x64 | [ZIP — рекомендуется](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.6/Amber-SSH-0.2.6-x64.zip) · [Один EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.6/Amber-SSH-0.2.6-x64.exe) | 0.2.6 |
+| Windows 10/11 x64 | [ZIP — рекомендуется](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.7/Amber-SSH-0.2.7-x64.zip) · [Один EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.7/Amber-SSH-0.2.7-x64.exe) | 0.2.7 |
 | Debian / Ubuntu / Mint x64 | [Установщик DEB](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-amd64.deb) | 0.2.5 |
 | Linux x64, включая Arch | [AppImage](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x86_64.AppImage) · [tar.gz](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x64.tar.gz) | 0.2.5 |
 

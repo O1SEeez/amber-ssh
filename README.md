@@ -13,7 +13,7 @@ A minimal SSH desktop client for Windows and Linux, with a calm dark interface a
 
 | Platform | Build | Version |
 | --- | --- | --- |
-| Windows 10/11 x64 | [ZIP — recommended](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.6/Amber-SSH-0.2.6-x64.zip) · [Single EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.6/Amber-SSH-0.2.6-x64.exe) | 0.2.6 |
+| Windows 10/11 x64 | [ZIP — recommended](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.7/Amber-SSH-0.2.7-x64.zip) · [Single EXE](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.7/Amber-SSH-0.2.7-x64.exe) | 0.2.7 |
 | Debian / Ubuntu / Mint x64 | [DEB installer](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-amd64.deb) | 0.2.5 |
 | Linux x64, including Arch | [AppImage](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x86_64.AppImage) · [tar.gz](https://github.com/O1SEeez/amber-ssh/releases/download/v0.2.5/Amber-SSH-0.2.5-linux-x64.tar.gz) | 0.2.5 |
 
