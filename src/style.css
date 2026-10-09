@@ -7,3 +7,5 @@
 .brand-icon{width:24px;height:24px;object-fit:contain}.welcome-logo{width:88px;height:88px;object-fit:contain;margin-bottom:22px}.language-control{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)}.language-control select{font:inherit;background:#191a1e;color:#ddd;border:1px solid #41444c;border-radius:4px;padding:5px;outline-color:var(--accent)}
 
 .backup-modal form{margin-top:20px}.backup-modal label input{display:block;width:100%;margin-top:8px}.backup-modal button:disabled{opacity:.5;cursor:wait}
+
+.update-control{-webkit-app-region:no-drag;display:flex;align-items:center;gap:7px;margin-left:auto;margin-right:12px;padding:6px 9px;border-radius:5px;color:var(--muted);font-size:11px}.update-control:hover{background:#d9975815;color:var(--accent)}.update-control.update-visible{color:var(--accent);background:#d9975815}.update-control:not(.update-visible):not(:disabled) span{display:none}.update-control:not(.update-visible):not(:disabled):hover span,.update-control:focus-visible span{display:inline}
