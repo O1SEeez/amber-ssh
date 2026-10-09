@@ -51,7 +51,11 @@ async function main(){
   await paste("printf 'CYRILLIC:%s\\n' 'привет мир'");await key('Enter','Enter',13);await wait('document.querySelector(".xterm-rows")?.textContent.includes("CYRILLIC:привет мир")');
   console.log('PASS: real packaged Linux client + SSH + Bash/readline, delayed handshake geometry, bracketed paste, wrapped command editing, immediate arrows, preserved server banner, Cyrillic input');
  }finally{
-  socket?.close();child.kill();for(const c of clients)c.end();server.close();for(const b of bridges)b.stdin.end();await delay(500);for(const b of bridges)b.kill();
+  socket?.close();for(const c of clients)c.end();server.close();for(const b of bridges)b.stdin.end();
+  // Electron can retain an active-session close dialog after SIGTERM. Always
+  // reap the test process, so a passed integration check cannot hang CI.
+  if(child.exitCode===null&&child.signalCode===null)await new Promise(resolve=>{child.once('exit',resolve);child.kill();setTimeout(()=>{child.kill('SIGKILL');resolve();},3000).unref();});
+  for(const b of bridges)if(b.exitCode===null&&b.signalCode===null)b.kill('SIGKILL');
  }
 }
 if(process.platform==='linux')main().catch(e=>{console.error(e);process.exitCode=1;});
